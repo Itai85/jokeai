@@ -1,5 +1,0 @@
-[phases.install]
-cmds = ["pip3 install -r requirements.txt"]
-
-[start]
-cmd = "gunicorn server:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60"
