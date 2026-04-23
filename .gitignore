@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Database (don't commit local DB)
+*.db
+*.db-shm
+*.db-wal
+
+# Media uploads (ephemeral)
+memes/
+avatars/
+
+# Node
+node_modules/
+.next/
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
