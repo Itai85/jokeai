@@ -1,0 +1,19 @@
+{
+  "name": "JokeAI",
+  "short_name": "JokeAI",
+  "description": "AI-generated humor, personalized for you",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#FBB924",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/joke.png", "sizes": "390x844", "type": "image/png" }
+  ],
+  "categories": ["entertainment", "social"],
+  "lang": "en-US"
+}
