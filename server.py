@@ -15,6 +15,19 @@ from flask import Flask, request, jsonify, send_file, g
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB uploads
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    tb = traceback.format_exc()
+    print(f"[ERROR] {e}\n{tb}")
+    return jsonify({"error": str(e), "type": type(e).__name__}), 500
+
+@app.errorhandler(404)
+def handle_404(e):
+    return jsonify({"error": "Not found"}), 404
+
+# _ensure_db defined below after SCHEMA/SEED constants
+
 # ── JWT ───────────────────────────────────────────────────────────────────────
 import jwt as pyjwt
 JWT_SECRET = os.getenv("JWT_SECRET", "jokeai-dev-secret-change-in-production")
@@ -31,13 +44,22 @@ def verify_token(token: str) -> dict:
 # ── Paths (cross-platform: Windows local & Railway/cloud) ─────────────────────
 BASE_DIR = Path(__file__).parent.resolve()
 
-# DB: use env var if set (for persistent volume), else local file next to script
-_db_env  = os.getenv("DATABASE_PATH")
-DB_PATH  = Path(_db_env) if _db_env else BASE_DIR / "jokeai.db"
+# Detect cloud environment
+_is_cloud = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_STATIC_URL") or os.getenv("RENDER") or os.getenv("DYNO") or os.getenv("PORT"))
 
-# Media dirs: /tmp on cloud (ephemeral ok for demo), local folder on Windows
-_is_cloud = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RENDER") or os.getenv("DYNO"))
+# DB: /tmp on cloud (writable), local file on Windows
+_db_env  = os.getenv("DATABASE_PATH")
+if _db_env:
+    DB_PATH = Path(_db_env)
+elif _is_cloud:
+    DB_PATH = Path("/tmp/jokeai.db")
+else:
+    DB_PATH = BASE_DIR / "jokeai.db"
+
+# Media dirs
 _media_base = Path("/tmp/jokeai") if _is_cloud else BASE_DIR
+
+print(f"[PATHS] BASE_DIR={BASE_DIR} DB={DB_PATH} cloud={_is_cloud}")
 
 def get_db():
     if "db" not in g:
@@ -191,23 +213,33 @@ SEED_JOKES = [
 ]
 
 def init_db():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(str(DB_PATH))
-    db.executescript(SCHEMA)
-    db.executescript(SEED_TEMPLATES)
-    now = datetime.now(timezone.utc).isoformat()
-    for text, category in SEED_JOKES:
-        jid = str(uuid.uuid4())
-        try:
-            db.execute(
-                "INSERT OR IGNORE INTO jokes (id,text,category,language,intensity,safe,sexual,source,score,created_at) VALUES (?,?,?,'en',2,1,0,'seed',10,?)",
-                (jid, text, category, now)
-            )
-        except Exception:
-            pass
-    db.commit()
-    db.close()
-    print(f"[DB] Initialized at {DB_PATH}")
+    """Initialize DB — called at module level so gunicorn picks it up."""
+    try:
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        db = sqlite3.connect(str(DB_PATH))
+        db.executescript(SCHEMA)
+        db.executescript(SEED_TEMPLATES)
+        now = datetime.now(timezone.utc).isoformat()
+        for text, category in SEED_JOKES:
+            jid = str(uuid.uuid4())
+            try:
+                db.execute(
+                    "INSERT OR IGNORE INTO jokes "
+                    "(id,text,category,language,intensity,safe,sexual,source,score,created_at) "
+                    "VALUES (?,?,?,\'en\',2,1,0,\'seed\',10,?)",
+                    (jid, text, category, now)
+                )
+            except Exception:
+                pass
+        db.commit()
+        db.close()
+        print(f"[DB] Ready at {DB_PATH}")
+    except Exception as e:
+        print(f"[DB] Init FAILED: {e}")
+        raise
+
+# ── Run at import time (works with gunicorn AND direct python) ─────────────────
+init_db()
 
 # ── Auth helpers ───────────────────────────────────────────────────────────────
 def hash_password(pw: str) -> str:
@@ -260,7 +292,7 @@ def call_claude(prompt: str, system: str = "", max_tokens: int = 300) -> str:
     if not ANTHROPIC_KEY:
         return _fallback_joke(prompt)
     body = json.dumps({
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-3-5-haiku-20241022",
         "max_tokens": max_tokens,
         "messages": [{"role": "user", "content": prompt}],
         **({"system": system} if system else {})
@@ -289,7 +321,7 @@ def call_claude_vision(prompt: str, image_b64: str, mime: str) -> str:
     if not ANTHROPIC_KEY:
         return "He looks like someone who just realized he sent that message to the wrong chat."
     body = json.dumps({
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-3-5-haiku-20241022",
         "max_tokens": 200,
         "messages": [{
             "role": "user",
@@ -1083,8 +1115,17 @@ async function api(method, path, body=null, token=TOKEN) {{
   if (token) headers['Authorization'] = 'Bearer ' + token;
   const opts = {{method, headers}};
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(path, opts);
-  return [r.status, await r.json()];
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {{
+    const r = await fetch(path, {{...opts, signal: controller.signal}});
+    clearTimeout(timeout);
+    return [r.status, await r.json()];
+  }} catch(e) {{
+    clearTimeout(timeout);
+    if (e.name === 'AbortError') return [408, {{error: 'Request timed out — please try again'}}];
+    return [500, {{error: e.message}}];
+  }}
 }}
 
 function show(id, data) {{
@@ -1093,25 +1134,52 @@ function show(id, data) {{
   el.classList.add('show');
 }}
 
+function setBtn(id, loading, text) {{
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.disabled = loading;
+  b.textContent = loading ? '⏳ ' + text : b.dataset.orig || b.textContent;
+  if (!loading && b.dataset.orig) b.textContent = b.dataset.orig;
+}}
+
+document.addEventListener('DOMContentLoaded', () => {{
+  document.querySelectorAll('.btn').forEach(b => b.dataset.orig = b.textContent);
+}});
+
 async function getJoke() {{
-  const types = getSelectedTypes();
-  const intensity = document.getElementById('intensity-slider').value;
+  const btn = document.querySelector('[onclick="getJoke()"]');
+  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Thinking...';
   const lang = document.getElementById('lang-select').value;
   const [status, data] = await api('GET', `/api/jokes/generate?lang=${{lang}}`);
-  show('joke-result', {{...data, _hint: TOKEN ? 'Rate this joke with /api/jokes/rate' : 'Sign in to rate & save jokes'}});
+  btn.disabled=false; btn.textContent=orig;
+  if (data.error) {{ show('joke-result', {{error: data.error}}); return; }}
+  show('joke-result', {{
+    joke: data.text,
+    category: data.category,
+    source: data.source,
+    _hint: TOKEN ? 'Authenticated — ratings saved' : 'Sign in to save ratings'
+  }});
 }}
 
 async function roastFriend() {{
+  const btn = document.querySelector('[onclick="roastFriend()"]');
+  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Roasting...';
   const name = document.getElementById('r-name').value;
   const job  = document.getElementById('r-job').value;
   const fact = document.getElementById('r-fact').value;
+  if (!name || !job || !fact) {{ btn.disabled=false; btn.textContent=orig; show('roast-result', {{error: 'Fill in all fields!'}}); return; }}
   const [s, d] = await api('POST', '/api/roast/friend', {{name, job, fact}});
-  show('roast-result', d);
+  btn.disabled=false; btn.textContent=orig;
+  show('roast-result', d.error ? d : {{roast: d.text, share: d.shareText}});
 }}
 
 async function makeMeme() {{
+  const btn = document.querySelector('[onclick="makeMeme()"]');
+  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Creating meme...';
   const text = document.getElementById('meme-text').value;
+  if (!text) {{ btn.disabled=false; btn.textContent=orig; show('meme-result', {{error: 'Enter some joke text!'}}); return; }}
   const [s, d] = await api('POST', '/api/meme/generate', {{joke_text: text}});
+  btn.disabled=false; btn.textContent=orig;
   show('meme-result', d);
   if (d.url) {{
     const img = document.getElementById('meme-img');
@@ -1121,10 +1189,13 @@ async function makeMeme() {{
 }}
 
 async function register() {{
+  const btn = document.querySelector('[onclick="register()"]');
+  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Creating...';
   const email    = document.getElementById('reg-email').value;
   const username = document.getElementById('reg-username').value;
   const password = document.getElementById('reg-password').value;
   const [s, d] = await api('POST', '/api/auth/register', {{email, username, password, age_verified:true, accepted_tos:true}});
+  btn.disabled=false; btn.textContent=orig;
   show('auth-result', d);
   if (d.token) {{ TOKEN = d.token; localStorage.setItem('jokeai_token', TOKEN); }}
 }}
