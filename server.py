@@ -350,7 +350,11 @@ def build_joke_prompt(prefs: dict) -> str:
     humor_types = prefs.get("humor_types", ["dad jokes"])
     if isinstance(humor_types, str):
         humor_types = json.loads(humor_types)
-    lang = "Hebrew (עברית)" if prefs.get("language") == "he" else "English"
+    lang = prefs.get("language", "en")
+    if lang == "he":
+        lang_instruction = "IMPORTANT: Write the joke entirely in Hebrew (עברית). Every word must be in Hebrew."
+    else:
+        lang_instruction = "Write the joke in English."
     safe = prefs.get("safe_mode", 1)
     sexual = prefs.get("sexual_content", 0)
     return f"""You are a professional comedy writer. Generate ONE short, original joke.
@@ -359,7 +363,7 @@ Return ONLY the joke text — no title, no explanation, no preamble.
 Preferences:
 - Humor styles: {', '.join(humor_types)}
 - Intensity: {intensity_label} ({prefs.get('intensity',3)}/5)
-- Language: {lang}
+- {lang_instruction}
 - Safe mode: {"YES — avoid offensive or extreme content" if safe else "NO"}
 - Sexual humor: {"allowed (adult user)" if sexual else "NOT allowed"}
 
@@ -367,17 +371,34 @@ Rules:
 - 1–3 sentences max
 - Be original and genuinely funny
 - Avoid clichéd openings like "Why did the chicken..."
-- Be creative and unexpected"""
+- Be creative and unexpected
+- Intensity {prefs.get('intensity',3)}/5 means {"keep it very clean and family-friendly" if prefs.get('intensity',3) <= 2 else "push boundaries, be edgy and surprising" if prefs.get('intensity',3) >= 4 else "balanced humor"}"""
 
 def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
-    """Hybrid: DB pool first, AI fallback."""
+    """AI-first: generate fresh jokes with Gemini, pool as fallback."""
     humor_types = prefs.get("humor_types", ["dad jokes"])
     if isinstance(humor_types, str):
         humor_types = json.loads(humor_types)
     lang = prefs.get("language", "en")
     safe = int(prefs.get("safe_mode", 1))
     intensity = prefs.get("intensity", 3)
+    category = humor_types[0] if humor_types else "general"
 
+    # ── 1. If AI is available → generate fresh joke ────────────────────────
+    if GEMINI_KEY:
+        text = call_gemini(build_joke_prompt(prefs))
+        # Check it's not a fallback (fallback returns pool jokes)
+        pool_texts = [j[0] for j in SEED_JOKES]
+        if text and text not in pool_texts:
+            jid = str(uuid.uuid4())
+            now = datetime.now(timezone.utc).isoformat()
+            db_exec(
+                "INSERT INTO jokes (id,text,category,language,intensity,safe,sexual,source,score,created_at) VALUES (?,?,?,?,?,?,?,'ai',0,?)",
+                (jid, text, category, lang, intensity, safe, int(prefs.get("sexual_content", 0)), now)
+            )
+            return {"id": jid, "text": text, "category": category, "source": "ai"}
+
+    # ── 2. Fallback: serve from pool ───────────────────────────────────────
     exclude = ""
     params = [lang, safe, max(1, intensity-1), min(5, intensity+1)]
     if seen_ids:
@@ -385,7 +406,6 @@ def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
         exclude = f"AND id NOT IN ({placeholders})"
         params += seen_ids
 
-    # Try matching by category
     cat_filter = " OR ".join(["category=?" for _ in humor_types])
     cat_params = list(humor_types)
 
@@ -399,7 +419,6 @@ def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
     )
 
     if not row:
-        # Fallback: any matching joke
         row = db_one(
             f"SELECT * FROM jokes WHERE language=? AND safe>=? {exclude} ORDER BY RANDOM() LIMIT 1",
             [lang, safe] + (seen_ids if seen_ids else [])
@@ -408,16 +427,7 @@ def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
     if row:
         return {**row, "source": "pool"}
 
-    # Generate with AI
-    text = call_gemini(build_joke_prompt(prefs))
-    category = humor_types[0] if humor_types else "general"
-    jid = str(uuid.uuid4())
-    now = datetime.now(timezone.utc).isoformat()
-    db_exec(
-        "INSERT INTO jokes (id,text,category,language,intensity,safe,sexual,source,score,created_at) VALUES (?,?,?,?,?,?,?,'ai',0,?)",
-        (jid, text, category, lang, intensity, safe, int(prefs.get("sexual_content", 0)), now)
-    )
-    return {"id": jid, "text": text, "category": category, "source": "ai"}
+    return {"id": str(uuid.uuid4()), "text": "Why did the programmer quit? No more arrays of sunshine.", "category": "tech jokes", "source": "fallback"}
 
 # ── Meme Generator (Pillow) ────────────────────────────────────────────────────
 MEME_DIR = _media_base / "memes"
