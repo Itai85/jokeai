@@ -1,5 +1,5 @@
 """
-JokeAI — Full Backend Server
+Humora — Full Backend Server
 Flask · In-memory DB (SQLite) · JWT Auth · Anthropic AI · Pillow Meme Generator
 Run: python3 server.py
 """
@@ -30,7 +30,7 @@ def handle_404(e):
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
 import jwt as pyjwt
-JWT_SECRET = os.getenv("JWT_SECRET", "jokeai-dev-secret-change-in-production")
+JWT_SECRET = os.getenv("JWT_SECRET", "humora-dev-secret-change-in-production")
 JWT_ALGO   = "HS256"
 JWT_EXP    = 30  # days
 
@@ -57,7 +57,7 @@ else:
     DB_PATH = BASE_DIR / "jokeai.db"
 
 # Media dirs
-_media_base = Path("/tmp/jokeai") if _is_cloud else BASE_DIR
+_media_base = Path("/tmp/humora") if _is_cloud else BASE_DIR
 
 print(f"[PATHS] BASE_DIR={BASE_DIR} DB={DB_PATH} cloud={_is_cloud}")
 
@@ -195,21 +195,118 @@ INSERT OR IGNORE INTO meme_templates (id, name, category) VALUES
 """
 
 SEED_JOKES = [
+    # ── DAD JOKES (17) ──────────────────────────────────────────────────────────
     ("Why don't scientists trust atoms? Because they make up everything.", "dad jokes"),
-    ("I told my computer I needed a break. Now it won't stop sending me Kit-Kat ads.", "tech jokes"),
-    ("My wife told me I had to stop acting like a flamingo. I had to put my foot down.", "relationship jokes"),
-    ("I asked the universe for a sign. It sent me a stop sign. I'm still not sure what it means.", "absurd humor"),
-    ("The meeting could have been an email. The email could have been a text. The text could have been silence.", "work humor"),
-    ("A SQL query walks into a bar, walks up to two tables and asks... 'Can I join you?'", "tech jokes"),
     ("I'm reading a book about anti-gravity. It's impossible to put down.", "dad jokes"),
-    ("Our relationship is like a software update: I never know when it's happening and it always takes longer than expected.", "relationship jokes"),
-    ("I told my boss three companies were after me and I needed a raise. He asked which ones. I said gas, electric, and water.", "work humor"),
-    ("Existence is just the universe's way of debugging itself, and we are all unresolved stack traces.", "absurd humor"),
-    ("Why did the developer go broke? Because he used up all his cache.", "tech jokes"),
-    ("I love you more than coffee. Please don't make me prove it.", "relationship jokes"),
-    ("My calendar says I have a meeting with 'Future Successful Me'. He cancelled again.", "work humor"),
     ("Dad, are we pyromaniacs? Yes, we arson.", "dad jokes"),
+    ("I used to hate facial hair, but then it grew on me.", "dad jokes"),
+    ("What do you call a fake noodle? An impasta.", "dad jokes"),
+    ("I'm on a seafood diet. I see food and I eat it.", "dad jokes"),
+    ("What did the ocean say to the beach? Nothing, it just waved.", "dad jokes"),
+    ("I told my wife she was drawing her eyebrows too high. She seemed surprised.", "dad jokes"),
+    ("Why do fathers take an extra pair of socks when they go golfing? In case they get a hole in one.", "dad jokes"),
+    ("I got fired from the calendar factory. All I did was take a day off.", "dad jokes"),
+    ("What do you call a bear with no teeth? A gummy bear.", "dad jokes"),
+    ("I would tell you a construction joke, but I'm still working on it.", "dad jokes"),
+    ("Why did the scarecrow win an award? He was outstanding in his field.", "dad jokes"),
+    ("What do you call cheese that isn't yours? Nacho cheese.", "dad jokes"),
+    ("I used to play piano by ear, but now I use my hands.", "dad jokes"),
+    ("What did the grape do when it got stepped on? Nothing, it just let out a little wine.", "dad jokes"),
+    ("I'm afraid for the calendar. Its days are numbered.", "dad jokes"),
+
+    # ── TECH JOKES (17) ─────────────────────────────────────────────────────────
+    ("I told my computer I needed a break. Now it won't stop sending me Kit-Kat ads.", "tech jokes"),
+    ("A SQL query walks into a bar, walks up to two tables and asks... Can I join you?", "tech jokes"),
+    ("Why did the developer go broke? Because he used up all his cache.", "tech jokes"),
+    ("There are only 10 types of people in the world: those who understand binary and those who don't.", "tech jokes"),
+    ("A programmer's wife tells him: go to the store and get a loaf of bread. If they have eggs, get a dozen. He comes home with 12 loaves.", "tech jokes"),
+    ("Why do programmers prefer dark mode? Because light attracts bugs.", "tech jokes"),
+    ("It works on my machine. Then we'll ship your machine.", "tech jokes"),
+    ("I changed my password to 'incorrect' so whenever I forget it, the computer tells me.", "tech jokes"),
+    ("Debugging is like being the detective in a crime movie where you're also the murderer.", "tech jokes"),
+    ("The best thing about a Boolean is that even if you're wrong, you're only off by a bit.", "tech jokes"),
+    ("Why was the JavaScript developer sad? Because he didn't Node how to Express himself.", "tech jokes"),
+    ("A QA engineer walks into a bar. Orders 1 beer. Orders 0 beers. Orders 99999 beers. Orders -1 beers. Orders a lizard.", "tech jokes"),
+    ("My code doesn't have bugs. It has random features.", "tech jokes"),
+    ("To understand recursion, you must first understand recursion.", "tech jokes"),
+    ("I would tell you a UDP joke, but you might not get it.", "tech jokes"),
+    ("The cloud is just someone else's computer that you're paying rent on.", "tech jokes"),
+    ("Git commit -m 'fixed everything'. Narrator: he had not fixed everything.", "tech jokes"),
+
+    # ── RELATIONSHIP JOKES (17) ─────────────────────────────────────────────────
+    ("My wife told me I had to stop acting like a flamingo. I had to put my foot down.", "relationship jokes"),
+    ("Our relationship is like a software update: I never know when it's happening and it always takes longer than expected.", "relationship jokes"),
+    ("I love you more than coffee. Please don't make me prove it.", "relationship jokes"),
     ("Sometimes I think the WiFi password is the most intimate thing two people can share.", "relationship jokes"),
+    ("My husband said I should embrace my mistakes. So I hugged him.", "relationship jokes"),
+    ("Love is sharing your popcorn. True love is letting them have the last handful.", "relationship jokes"),
+    ("My partner said I never listen to them. At least I think that's what they said.", "relationship jokes"),
+    ("Marriage is like a deck of cards. In the beginning all you need is two hearts and a diamond. By the end, you wish you had a club and a spade.", "relationship jokes"),
+    ("I asked my wife what she wanted for her birthday. She said nothing would make her happier than a diamond necklace. So I got her nothing.", "relationship jokes"),
+    ("My girlfriend told me to go out and get something that makes her look sexy. So I got drunk.", "relationship jokes"),
+    ("Relationships are a lot like algebra. Have you ever looked at your X and wondered Y?", "relationship jokes"),
+    ("My wife says I only have two faults: I don't listen, and something else.", "relationship jokes"),
+    ("I love being married. It's so great to find one special person you want to annoy for the rest of your life.", "relationship jokes"),
+    ("Behind every successful man is a surprised woman.", "relationship jokes"),
+    ("My partner and I laugh about how competitive we are. But I laugh more.", "relationship jokes"),
+    ("A good relationship is like Wi-Fi. You don't notice it until it stops working.", "relationship jokes"),
+    ("They say love is blind. Marriage is the eye-opener.", "relationship jokes"),
+
+    # ── ABSURD HUMOR (17) ───────────────────────────────────────────────────────
+    ("I asked the universe for a sign. It sent me a stop sign. I'm still not sure what it means.", "absurd humor"),
+    ("Existence is just the universe's way of debugging itself, and we are all unresolved stack traces.", "absurd humor"),
+    ("If you rearrange the letters of 'postman', you get 'stop man'. The postman was not amused.", "absurd humor"),
+    ("I tried to sue the airline for losing my luggage. I lost my case.", "absurd humor"),
+    ("Time flies like an arrow. Fruit flies like a banana.", "absurd humor"),
+    ("I told my suitcase there will be no vacation this year. Now I'm dealing with emotional baggage.", "absurd humor"),
+    ("The rotation of Earth really makes my day.", "absurd humor"),
+    ("I once ate a watch. It was time consuming.", "absurd humor"),
+    ("A man walks into a bar. The second one ducks.", "absurd humor"),
+    ("Parallel lines have so much in common. Too bad they'll never meet.", "absurd humor"),
+    ("I stayed up all night wondering where the sun went. Then it dawned on me.", "absurd humor"),
+    ("What happens when you put a duck in a blender? Quark.", "absurd humor"),
+    ("I want to die peacefully in my sleep, like my grandfather. Not screaming and yelling like the passengers in his car.", "absurd humor"),
+    ("If tomatoes are a fruit, then ketchup is a smoothie.", "absurd humor"),
+    ("My therapist says I have a preoccupation with vengeance. We'll see about that.", "absurd humor"),
+    ("I used to think the brain was the most important organ. Then I realized what was telling me that.", "absurd humor"),
+    ("A plateau is the highest form of flattery.", "absurd humor"),
+
+    # ── DARK HUMOR (17) ─────────────────────────────────────────────────────────
+    ("I have a fish that can breakdance. Only for 20 seconds though, and only once.", "dark humor"),
+    ("I told my psychiatrist I was hearing voices. He said I don't have a psychiatrist.", "dark humor"),
+    ("The doctor gave me one year to live, so I shot him. The judge gave me 15 years. Problem solved.", "dark humor"),
+    ("My grandfather has the heart of a lion. And a lifetime ban from the zoo.", "dark humor"),
+    ("I have a joke about trickle-down economics. But 99 percent of you will never get it.", "dark humor"),
+    ("Dark humor is like food. Not everybody gets it.", "dark humor"),
+    ("What's the difference between a well-dressed man on a bicycle and a poorly-dressed man on a unicycle? Attire.", "dark humor"),
+    ("I was wondering why the frisbee was getting bigger. Then it hit me.", "dark humor"),
+    ("I asked my North Korean friend how things were going. He said he couldn't complain.", "dark humor"),
+    ("I have a stepladder. Not my real ladder.", "dark humor"),
+    ("Welcome to Plastic Surgery Addicts Anonymous. I see a lot of new faces.", "dark humor"),
+    ("My wife left me because I'm too insecure. No wait, she's back. She just went to get coffee.", "dark humor"),
+    ("The cemetery is so crowded. People must be dying to get in there.", "dark humor"),
+    ("I threw a boomerang a few years ago. I now live in constant fear.", "dark humor"),
+    ("I'm not saying my cooking is bad, but the smoke alarm cheers me on.", "dark humor"),
+    ("My parents raised me as an only child, which was tough on my brother.", "dark humor"),
+
+    # ── WORK HUMOR (17) ─────────────────────────────────────────────────────────
+    ("The meeting could have been an email. The email could have been a text. The text could have been silence.", "work humor"),
+    ("I told my boss three companies were after me and I needed a raise. He asked which ones. I said gas, electric, and water.", "work humor"),
+    ("My calendar says I have a meeting with Future Successful Me. He cancelled again.", "work humor"),
+    ("My boss told me to have a good day. So I went home.", "work humor"),
+    ("I'm not lazy. I'm on energy-saving mode.", "work humor"),
+    ("The only thing I spread at work is misinformation.", "work humor"),
+    ("Experience is what you get when you didn't get what you wanted.", "work humor"),
+    ("Nothing ruins a Friday more than realizing it's only Wednesday.", "work humor"),
+    ("Teamwork means never having to take all the blame yourself.", "work humor"),
+    ("My resume is just a list of things I never want to do again.", "work humor"),
+    ("I always give 100 percent at work: 10 percent Monday, 23 percent Tuesday, 40 percent Wednesday, 22 percent Thursday, 5 percent Friday.", "work humor"),
+    ("The closest to being organized I've ever been is that one time I put two things in the same drawer.", "work humor"),
+    ("I'm great at multitasking. I can waste time, be unproductive, and procrastinate all at once.", "work humor"),
+    ("My work-life balance is a coffee in one hand and anxiety in the other.", "work humor"),
+    ("HR said I should focus on my strengths. So now I nap with confidence.", "work humor"),
+    ("I put my heart and soul into my work. That's why my heart stopped and my soul left.", "work humor"),
+    ("If at first you don't succeed, redefine success.", "work humor"),
 ]
 
 def init_db():
@@ -284,56 +381,112 @@ def get_prefs(user_id: str) -> dict:
     return row
 
 # ── AI Joke Generation ─────────────────────────────────────────────────────────
-GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+AI_KEY = os.getenv("GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
+AI_PROVIDER = "groq" if os.getenv("GROQ_API_KEY") else ("gemini" if os.getenv("GROQ_API_KEY") else "")
 
-def call_gemini(prompt: str, system: str = "", max_tokens: int = 300) -> str:
-    """Call Google Gemini API (free tier)."""
+def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
+    """Call AI - supports Groq (free) and Gemini (free)."""
     import urllib.request
-    if not GEMINI_KEY:
+    if not AI_KEY:
         return _fallback_joke(prompt)
-    full_prompt = (system + "\n\n" + prompt) if system else prompt
-    body = json.dumps({
-        "contents": [{"parts": [{"text": full_prompt}]}],
-        "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.9}
-    }).encode()
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+
+    if AI_PROVIDER == "groq":
+        # Groq uses OpenAI-compatible API — free, fast, generous limits
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+        body = json.dumps({
+            "model": "llama-3.3-70b-versatile",
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": 0.9
+        }).encode()
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {AI_KEY}"
+            },
+            method="POST"
+        )
+    else:
+        # Gemini
+        full_prompt = (system + "\n\n" + prompt) if system else prompt
+        body = json.dumps({
+            "contents": [{"parts": [{"text": full_prompt}]}],
+            "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.9}
+        }).encode()
+        req = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={AI_KEY}",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             data = json.loads(resp.read())
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if AI_PROVIDER == "groq":
+                return data["choices"][0]["message"]["content"].strip()
+            else:
+                return data["candidates"][0]["content"]["parts"][0]["text"].strip()
     except urllib.error.HTTPError as e:
         error_body = e.read().decode()
-        print(f"[AI] Gemini API {e.code}: {error_body[:300]}")
+        print(f"[AI] {AI_PROVIDER} API {e.code}: {error_body[:300]}")
         return _fallback_joke(prompt)
     except Exception as e:
-        print(f"[AI] Gemini call failed: {type(e).__name__}: {e}")
+        print(f"[AI] {AI_PROVIDER} call failed: {type(e).__name__}: {e}")
         return _fallback_joke(prompt)
 
-def call_gemini_vision(prompt: str, image_b64: str, mime: str) -> str:
-    """Call Gemini with an image (free tier supports vision)."""
+def call_ai_vision(prompt: str, image_b64: str, mime: str) -> str:
+    """Call AI with an image — Groq (Llama Vision) or Gemini."""
     import urllib.request
-    if not GEMINI_KEY:
+    if not AI_KEY:
         return "He looks like someone who just realized he sent that message to the wrong chat."
-    body = json.dumps({
-        "contents": [{"parts": [
-            {"inline_data": {"mime_type": mime, "data": image_b64}},
-            {"text": prompt}
-        ]}],
-        "generationConfig": {"maxOutputTokens": 200, "temperature": 0.9}
-    }).encode()
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
+
+    if AI_PROVIDER == "groq":
+        body = json.dumps({
+            "model": "llama-3.2-90b-vision-preview",
+            "messages": [{"role": "user", "content": [
+                {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{image_b64}"}},
+                {"type": "text", "text": prompt}
+            ]}],
+            "max_tokens": 200, "temperature": 0.9
+        }).encode()
+        req = urllib.request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=body,
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {AI_KEY}"},
+            method="POST"
+        )
+    else:
+        body = json.dumps({
+            "contents": [{"parts": [
+                {"inline_data": {"mime_type": mime, "data": image_b64}},
+                {"text": prompt}
+            ]}],
+            "generationConfig": {"maxOutputTokens": 200, "temperature": 0.9}
+        }).encode()
+        req = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={AI_KEY}",
+            data=body, headers={"Content-Type": "application/json"}, method="POST"
+        )
+
     try:
         with urllib.request.urlopen(req, timeout=25) as resp:
             data = json.loads(resp.read())
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if AI_PROVIDER == "groq":
+                return data["choices"][0]["message"]["content"].strip()
+            else:
+                return data["candidates"][0]["content"]["parts"][0]["text"].strip()
     except urllib.error.HTTPError as e:
         error_body = e.read().decode()
-        print(f"[AI] Gemini Vision {e.code}: {error_body[:300]}")
+        print(f"[AI] {AI_PROVIDER} Vision {e.code}: {error_body[:300]}")
         return "He looks like someone who just realized he sent that message to the wrong chat."
     except Exception as e:
-        print(f"[AI] Gemini Vision failed: {type(e).__name__}: {e}")
+        print(f"[AI] {AI_PROVIDER} Vision failed: {type(e).__name__}: {e}")
         return "He looks like someone who just realized he sent that message to the wrong chat."
 
 
@@ -385,8 +538,8 @@ def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
     category = humor_types[0] if humor_types else "general"
 
     # ── 1. If AI is available → generate fresh joke ────────────────────────
-    if GEMINI_KEY:
-        text = call_gemini(build_joke_prompt(prefs))
+    if AI_KEY:
+        text = call_ai(build_joke_prompt(prefs))
         # Check it's not a fallback (fallback returns pool jokes)
         pool_texts = [j[0] for j in SEED_JOKES]
         if text and text not in pool_texts:
@@ -488,7 +641,7 @@ def generate_meme_image(joke_text: str, template_name: str = "Drake Approves") -
 
     # Header bar
     draw.rectangle([(0, 0), (W, 80)], fill=(245, 158, 11))
-    draw.text((W // 2, 40), "😂  JokeAI", font=font_big, fill=(20, 20, 20), anchor="mm")
+    draw.text((W // 2, 40), "😂  Humora", font=font_big, fill=(20, 20, 20), anchor="mm")
 
     # Template badge
     badge_text = f"[ {template_name} ]"
@@ -542,7 +695,7 @@ def options_handler(p):
 # ── HEALTH ────────────────────────────────────────────────────────────────────
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(GEMINI_KEY)})
+    return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(AI_KEY)})
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 @app.route("/api/auth/register", methods=["POST"])
@@ -836,8 +989,8 @@ Rules:
 - Something they'd laugh at too
 - Return ONLY the roast text"""
 
-    text = call_gemini(prompt)
-    share_text = f"😂 JokeAI just roasted {name}:\n\n\"{text}\"\n\nRoast your friends: {request.host_url}"
+    text = call_ai(prompt)
+    share_text = f"😂 Humora just roasted {name}:\n\n\"{text}\"\n\nRoast your friends: {request.host_url}"
     return jsonify({"text": text, "shareText": share_text})
 
 @app.route("/api/roast/photo", methods=["POST"])
@@ -860,8 +1013,8 @@ Rules:
 - 1-2 sentences max
 - Return ONLY the joke text"""
 
-    text = call_gemini_vision(prompt, b64, file.mimetype)
-    share_text = f"😂 JokeAI roasted my photo:\n\n\"{text}\"\n\nGet roasted: {request.host_url}"
+    text = call_ai_vision(prompt, b64, file.mimetype)
+    share_text = f"😂 Humora roasted my photo:\n\n\"{text}\"\n\nGet roasted: {request.host_url}"
     return jsonify({"text": text, "shareText": share_text})
 
 # ── MEME ──────────────────────────────────────────────────────────────────────
@@ -993,13 +1146,13 @@ def get_battle(token):
 # ── DEMO API EXPLORER (HTML) ───────────────────────────────────────────────────
 @app.route("/")
 def index():
-    ai_status = "✅ Gemini AI Connected" if GEMINI_KEY else "⚠️ Using joke pool (add GEMINI_API_KEY)"
+    ai_status = "✅ AI Connected (Groq/Gemini)" if AI_KEY else "⚠️ Using joke pool (add GROQ_API_KEY)"
     return """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JokeAI 😂</title>
+<title>Humora 😂</title>
 <style>
   :root {
     --bg: #0d0d14;
@@ -1015,6 +1168,12 @@ def index():
     --green: #00e676;
     --radius: 16px;
   }
+  .header-login { background: rgba(245,166,35,.15); color: var(--accent); border: 1px solid rgba(245,166,35,.3);
+                  border-radius: 999px; padding: .35rem .9rem; font-size: .78rem; font-weight: 700;
+                  cursor: pointer; transition: all .18s; }
+  .header-login:hover { background: rgba(245,166,35,.3); }
+  .header-login.logged-in { background: rgba(0,230,118,.12); color: var(--green);
+                            border-color: rgba(0,230,118,.3); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
          background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -1098,13 +1257,7 @@ def index():
   .pill.on { background: linear-gradient(135deg, var(--accent), var(--accent2));
              color: #0d0d14; border-color: transparent; }
 
-  /* INTENSITY */
-  .intensity-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-  .intensity-row label { font-size: .78rem; color: var(--text2); font-weight: 600;
-                         text-transform: uppercase; letter-spacing: .06em; min-width: 80px; }
-  input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; }
-  .intensity-val { font-size: .85rem; font-weight: 800; color: var(--accent);
-                   min-width: 60px; text-align: right; }
+
 
   /* LANG TOGGLE */
   .lang-row { display: flex; gap: .4rem; margin-bottom: 1rem; }
@@ -1216,8 +1369,11 @@ def index():
 <body>
 
 <div class="header">
-  <div class="logo">😂 JokeAI</div>
-  <div class="ai-badge" id="ai-badge">""" + ai_status + """</div>
+  <div class="logo">😂 Humora</div>
+  <div style="display:flex;align-items:center;gap:.75rem">
+    <button class="header-login" id="header-login-btn" onclick="showTab('auth',document.querySelector('[onclick*=auth]'))">👤 Sign In</button>
+    <div class="ai-badge" id="ai-badge">""" + ai_status + """</div>
+  </div>
 </div>
 
 <div class="tabs">
@@ -1225,7 +1381,7 @@ def index():
   <button class="tab" onclick="showTab('roast',this)">🔥 Roast</button>
   <button class="tab" onclick="showTab('meme',this)">🖼️ Meme</button>
   <button class="tab" onclick="showTab('battle',this)">⚔️ Battle</button>
-  <button class="tab" onclick="showTab('auth',this)">👤 Account</button>
+
 </div>
 
 <div class="main">
@@ -1263,12 +1419,7 @@ def index():
       </div>
     </div>
 
-    <div class="intensity-row">
-      <label>Intensity</label>
-      <input type="range" min="1" max="5" value="3" id="intensity"
-             oninput="document.getElementById('ival').textContent='Level '+this.value">
-      <span class="intensity-val" id="ival">Level 3</span>
-    </div>
+
 
     <div class="filter-label">Language</div>
     <div class="lang-row" style="margin-bottom:1rem">
@@ -1496,7 +1647,6 @@ function setLang(l) {
 async function getJoke() {
   setLoading('joke-btn', true, 'Generating...');
   const types = getHumorTypes();
-  const intensity = document.getElementById('intensity').value;
   const [ok, data] = await api('GET', `/api/jokes/generate?lang=${lang}&intensity=${intensity}&types=${encodeURIComponent(types.join(','))}`);
   setLoading('joke-btn', false);
   if (!ok || data.error) { toast('❌ ' + (data.error || 'Failed')); return; }
@@ -1532,7 +1682,7 @@ async function rate(r) {
 
 function shareJoke(platform) {
   if (!currentJoke) return;
-  const text = `😂 JokeAI\n\n${currentJoke.text}\n\nTry it: ${location.origin}`;
+  const text = `😂 Humora\n\n${currentJoke.text}\n\nTry it: ${location.origin}`;
   if (platform === 'copy') { navigator.clipboard.writeText(text); toast('📋 Copied!'); }
   else if (platform === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(text));
   else if (platform === 'telegram') window.open('https://t.me/share/url?url=' + encodeURIComponent(location.origin) + '&text=' + encodeURIComponent('😂 ' + currentJoke.text));
@@ -1679,12 +1829,16 @@ async function doAuth() {
 }
 
 function showProfile(name) {
+  const hb = document.getElementById('header-login-btn');
+  if (hb) { hb.textContent = '✅ ' + name; hb.classList.add('logged-in'); }
   document.getElementById('auth-card').style.display = 'none';
   document.getElementById('profile-card').style.display = 'block';
   document.getElementById('profile-name').textContent = '@' + name;
 }
 
 function logout() {
+  const hb = document.getElementById('header-login-btn');
+  if (hb) { hb.textContent = '👤 Sign In'; hb.classList.remove('logged-in'); }
   TOKEN = ''; localStorage.removeItem('jk_token');
   document.getElementById('auth-card').style.display = 'block';
   document.getElementById('profile-card').style.display = 'none';
@@ -1706,17 +1860,17 @@ if __name__ == "__main__":
     init_db()
     port = int(os.getenv("PORT", 4000))
     print(f"\n{'='*55}")
-    print(f"  😂  JokeAI API Server")
+    print(f"  😂  Humora API Server")
     print(f"{'='*55}")
     print(f"  URL:    http://localhost:{port}")
     print(f"  DB:     {DB_PATH}")
-    if GEMINI_KEY:
-        print(f"  AI:     ✅ Gemini (Google) — live AI jokes!")
+    if AI_KEY:
+        print(f"  AI:     ✅ {AI_PROVIDER.title()} AI — live AI jokes!")
     else:
         print(f"  AI:     ⚠️  Using joke pool (no API key set)")
         print(f"")
-        print(f"  To enable AI jokes, set your Gemini key:")
-        print(f"  Windows:  set GEMINI_API_KEY=AIza...")
+        print(f"  To enable AI jokes, set your Groq key:")
+        print(f"  Windows:  set GROQ_API_KEY=gsk_...")
         print(f"  Then restart:  python server.py")
     print(f"{'='*55}\n")
     app.run(host="0.0.0.0", port=port, debug=False)
