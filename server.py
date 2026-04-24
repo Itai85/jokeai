@@ -287,63 +287,48 @@ def get_prefs(user_id: str) -> dict:
 ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
 def call_claude(prompt: str, system: str = "", max_tokens: int = 300) -> str:
-    """Call Anthropic Claude API directly via HTTP (no SDK needed)."""
-    import urllib.request
+    """Call Anthropic Claude API using the SDK."""
     if not ANTHROPIC_KEY:
         return _fallback_joke(prompt)
-    body = json.dumps({
-        "model": "claude-3-5-haiku-20241022",
-        "max_tokens": max_tokens,
-        "messages": [{"role": "user", "content": prompt}],
-        **({"system": system} if system else {})
-    }).encode()
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=body,
-        headers={
-            "Content-Type": "application/json",
-            "x-api-key": ANTHROPIC_KEY,
-            "anthropic-version": "2023-06-01",
-        },
-        method="POST"
-    )
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read())
-            return data["content"][0]["text"].strip()
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        kwargs = {
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if system:
+            kwargs["system"] = system
+        msg = client.messages.create(**kwargs)
+        return msg.content[0].text.strip()
     except Exception as e:
-        print(f"[AI] Claude call failed: {e}")
+        print(f"[AI] Claude call failed: {type(e).__name__}: {e}")
         return _fallback_joke(prompt)
 
 def call_claude_vision(prompt: str, image_b64: str, mime: str) -> str:
-    """Call Claude with an image."""
-    import urllib.request
+    """Call Claude with an image using the SDK."""
     if not ANTHROPIC_KEY:
         return "He looks like someone who just realized he sent that message to the wrong chat."
-    body = json.dumps({
-        "model": "claude-3-5-haiku-20241022",
-        "max_tokens": 200,
-        "messages": [{
-            "role": "user",
-            "content": [
-                {"type": "image", "source": {"type": "base64", "media_type": mime, "data": image_b64}},
-                {"type": "text", "text": prompt}
-            ]
-        }]
-    }).encode()
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=body,
-        headers={"Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"},
-        method="POST"
-    )
     try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            data = json.loads(resp.read())
-            return data["content"][0]["text"].strip()
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        msg = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=200,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": mime, "data": image_b64}},
+                    {"type": "text", "text": prompt}
+                ]
+            }]
+        )
+        return msg.content[0].text.strip()
     except Exception as e:
-        print(f"[AI] Vision call failed: {e}")
+        print(f"[AI] Vision call failed: {type(e).__name__}: {e}")
         return "He looks like someone who just realized he sent that message to the wrong chat."
+
 
 def _fallback_joke(ctx: str = "") -> str:
     """Return a random seeded joke when AI is unavailable."""
