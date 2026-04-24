@@ -685,10 +685,25 @@ def generate_joke():
     seen_param = request.args.get("seen", "")
     seen_ids = [s for s in seen_param.split(",") if s.strip()]
 
+    # Accept lang/intensity/types overrides from query string (used by UI)
+    qs_lang      = request.args.get("lang", "")
+    qs_intensity = request.args.get("intensity", "")
+    qs_types     = request.args.get("types", "")
+
     if g.user_id:
         prefs = get_prefs(g.user_id)
     else:
         prefs = {"humor_types": ["dad jokes", "absurd humor"], "intensity": 2, "language": "en", "safe_mode": 1, "sexual_content": 0}
+
+    # Apply query string overrides
+    if qs_lang in ("en", "he"):
+        prefs["language"] = qs_lang
+    if qs_intensity.isdigit():
+        prefs["intensity"] = max(1, min(5, int(qs_intensity)))
+    if qs_types:
+        types = [t.strip() for t in qs_types.split(",") if t.strip()]
+        if types:
+            prefs["humor_types"] = types
 
     joke = get_joke_for_user(prefs, seen_ids)
 
@@ -976,284 +991,713 @@ def get_battle(token):
 # ── DEMO API EXPLORER (HTML) ───────────────────────────────────────────────────
 @app.route("/")
 def index():
-    ai_status = "✅ Connected" if ANTHROPIC_KEY else "⚠️  Not configured (using joke pool)"
-    return f"""<!DOCTYPE html>
+    ai_status = "✅ Claude AI Connected" if ANTHROPIC_KEY else "⚠️ Using joke pool (add ANTHROPIC_API_KEY)"
+    return """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JokeAI API</title>
+<title>JokeAI 😂</title>
 <style>
-  *{{box-sizing:border-box;margin:0;padding:0}}
-  body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#09090b;color:#e4e4e7;min-height:100vh;padding:2rem 1rem}}
-  .wrap{{max-width:900px;margin:0 auto}}
-  h1{{font-size:2.2rem;font-weight:800;color:#fbbf24;margin-bottom:.25rem}}
-  .sub{{color:#71717a;margin-bottom:2rem;font-size:.95rem}}
-  .status{{display:inline-flex;align-items:center;gap:.5rem;background:#18181b;border:1px solid #27272a;border-radius:8px;padding:.5rem 1rem;font-size:.85rem;margin-bottom:2rem}}
-  .grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:2rem}}
-  .card{{background:#18181b;border:1px solid #27272a;border-radius:12px;padding:1.25rem}}
-  .card h3{{font-size:.9rem;font-weight:700;color:#fbbf24;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em}}
-  .endpoint{{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid #27272a;font-size:.82rem}}
-  .endpoint:last-child{{border-bottom:none}}
-  .method{{font-weight:700;font-size:.7rem;padding:2px 6px;border-radius:4px;min-width:38px;text-align:center}}
-  .get{{background:#064e3b;color:#6ee7b7}}.post{{background:#1e1b4b;color:#a5b4fc}}.put{{background:#78350f;color:#fcd34d}}
-  .path{{color:#d4d4d8;font-family:monospace;font-size:.8rem}}
-  .try-section{{background:#18181b;border:1px solid #27272a;border-radius:12px;padding:1.5rem;margin-bottom:1rem}}
-  .try-section h3{{color:#fbbf24;margin-bottom:1rem;font-size:1rem}}
-  .btn{{background:#fbbf24;color:#09090b;border:none;border-radius:8px;padding:.6rem 1.2rem;font-weight:700;cursor:pointer;font-size:.85rem;transition:all .15s}}
-  .btn:hover{{background:#f59e0b}}
-  .btn-outline{{background:transparent;border:1px solid #27272a;color:#e4e4e7}}
-  .btn-outline:hover{{background:#27272a}}
-  .result{{background:#0a0a0a;border:1px solid #27272a;border-radius:8px;padding:1rem;margin-top:.75rem;font-family:monospace;font-size:.8rem;color:#86efac;white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto;display:none}}
-  .result.show{{display:block}}
-  .row{{display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:.5rem}}
-  input,select{{background:#09090b;border:1px solid #27272a;border-radius:6px;padding:.5rem .75rem;color:#e4e4e7;font-size:.85rem;flex:1;min-width:120px}}
-  label{{font-size:.78rem;color:#71717a;display:block;margin-bottom:.25rem}}
-  .pill{{display:inline-block;background:#27272a;border-radius:999px;padding:.2rem .6rem;font-size:.72rem;margin:.1rem;cursor:pointer;user-select:none;transition:background .15s}}
-  .pill.active{{background:#fbbf24;color:#09090b;font-weight:700}}
-  .img-out{{margin-top:.75rem;display:none}}
-  .img-out.show{{display:block}}
-  .img-out img{{border-radius:8px;max-width:100%;border:1px solid #27272a}}
-  footer{{text-align:center;color:#3f3f46;font-size:.75rem;margin-top:3rem}}
+  :root {
+    --bg: #0d0d14;
+    --surface: #16161f;
+    --surface2: #1e1e2e;
+    --border: #2a2a3d;
+    --accent: #f5a623;
+    --accent2: #ff6b6b;
+    --accent3: #7c6aff;
+    --accent4: #00d2ff;
+    --text: #f0f0ff;
+    --text2: #9898b8;
+    --green: #00e676;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #1a0533 0%, #0d1544 50%, #0d2233 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+  .logo { font-size: 1.6rem; font-weight: 900; letter-spacing: -1px;
+          background: linear-gradient(135deg, #f5a623, #ff6b6b);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .ai-badge { font-size: .75rem; padding: .3rem .75rem; border-radius: 999px;
+              background: rgba(0,230,118,.12); color: var(--green);
+              border: 1px solid rgba(0,230,118,.3); font-weight: 600; }
+
+  /* TABS */
+  .tabs { display: flex; gap: .5rem; padding: 1rem 1.5rem .5rem;
+          overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; padding: .55rem 1.2rem; border-radius: 999px; border: none;
+         cursor: pointer; font-size: .88rem; font-weight: 700; transition: all .2s;
+         background: var(--surface2); color: var(--text2); }
+  .tab.active { background: linear-gradient(135deg, var(--accent), var(--accent2));
+                color: #0d0d14; }
+
+  /* MAIN */
+  .main { max-width: 680px; margin: 0 auto; padding: 1rem 1.2rem 6rem; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title { font-size: 1rem; font-weight: 800; margin-bottom: 1rem;
+                display: flex; align-items: center; gap: .5rem; }
+
+  /* JOKE DISPLAY */
+  .joke-box {
+    background: linear-gradient(135deg, #1a0a2e 0%, #0d1a3a 100%);
+    border: 1px solid rgba(124,106,255,.3);
+    border-radius: var(--radius);
+    padding: 2rem 1.5rem;
+    margin-bottom: 1rem;
+    min-height: 140px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .joke-box::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(124,106,255,.15) 0%, transparent 70%);
+  }
+  .joke-text { font-size: 1.25rem; font-weight: 600; line-height: 1.6;
+               color: var(--text); position: relative; z-index: 1; }
+  .joke-meta { margin-top: .75rem; display: flex; gap: .5rem; justify-content: center;
+               position: relative; z-index: 1; }
+  .badge { font-size: .7rem; font-weight: 700; padding: .2rem .6rem; border-radius: 999px;
+           text-transform: uppercase; letter-spacing: .05em; }
+  .badge-cat { background: rgba(124,106,255,.2); color: #a89aff; border: 1px solid rgba(124,106,255,.3); }
+  .badge-src { background: rgba(0,210,255,.1); color: var(--accent4); border: 1px solid rgba(0,210,255,.2); }
+  .joke-empty { color: var(--text2); font-size: 1rem; }
+
+  /* PILL FILTERS */
+  .filters { margin-bottom: 1rem; }
+  .filter-label { font-size: .78rem; color: var(--text2); font-weight: 600;
+                  text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+  .pills { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .pill { padding: .4rem .85rem; border-radius: 999px; border: 1px solid var(--border);
+          cursor: pointer; font-size: .82rem; font-weight: 600; transition: all .18s;
+          background: var(--surface2); color: var(--text2); user-select: none; }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill.on { background: linear-gradient(135deg, var(--accent), var(--accent2));
+             color: #0d0d14; border-color: transparent; }
+
+  /* INTENSITY */
+  .intensity-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+  .intensity-row label { font-size: .78rem; color: var(--text2); font-weight: 600;
+                         text-transform: uppercase; letter-spacing: .06em; min-width: 80px; }
+  input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; }
+  .intensity-val { font-size: .85rem; font-weight: 800; color: var(--accent);
+                   min-width: 60px; text-align: right; }
+
+  /* LANG TOGGLE */
+  .lang-row { display: flex; gap: .4rem; margin-bottom: 1rem; }
+  .lang-btn { flex: 1; padding: .5rem; border-radius: 10px; border: 1px solid var(--border);
+              cursor: pointer; font-size: .85rem; font-weight: 700; transition: all .18s;
+              background: var(--surface2); color: var(--text2); }
+  .lang-btn.on { background: rgba(0,210,255,.12); color: var(--accent4);
+                 border-color: rgba(0,210,255,.4); }
+
+  /* ACTION BUTTONS */
+  .actions { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .btn { padding: .75rem 1.5rem; border-radius: 12px; border: none; cursor: pointer;
+         font-size: .9rem; font-weight: 800; transition: all .18s; flex: 1;
+         min-width: 120px; display: flex; align-items: center; justify-content: center; gap: .4rem; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #ff9500);
+                 color: #0d0d14; box-shadow: 0 4px 20px rgba(245,166,35,.3); }
+  .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 28px rgba(245,166,35,.5); transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover:not(:disabled) { border-color: var(--accent3); color: var(--accent3); }
+  .btn-danger { background: linear-gradient(135deg, var(--accent2), #ff4444);
+                color: white; box-shadow: 0 4px 20px rgba(255,107,107,.3); }
+  .btn-purple { background: linear-gradient(135deg, var(--accent3), #9c6aff);
+                color: white; box-shadow: 0 4px 20px rgba(124,106,255,.3); }
+  .btn-full { width: 100%; min-width: unset; }
+
+  /* SHARE ROW */
+  .share-row { display: flex; gap: .5rem; margin-top: .75rem; }
+  .share-btn { flex: 1; padding: .6rem; border-radius: 10px; border: none; cursor: pointer;
+               font-size: .8rem; font-weight: 700; transition: all .18s; }
+  .share-wa { background: rgba(37,211,102,.12); color: #25d366; border: 1px solid rgba(37,211,102,.3); }
+  .share-tg { background: rgba(0,136,204,.12); color: #0088cc; border: 1px solid rgba(0,136,204,.3); }
+  .share-cp { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .share-wa:hover { background: rgba(37,211,102,.25); }
+  .share-tg:hover { background: rgba(0,136,204,.25); }
+  .share-cp:hover { background: var(--border); }
+
+  /* RATING ROW */
+  .rating-row { display: flex; gap: .5rem; }
+  .rate-btn { flex: 1; padding: .6rem; border-radius: 10px; border: 1px solid var(--border);
+              cursor: pointer; font-size: .85rem; font-weight: 700; transition: all .18s;
+              background: var(--surface2); color: var(--text2); }
+  .rate-btn:hover { border-color: var(--accent); }
+  .rate-btn.active { background: linear-gradient(135deg, var(--accent), var(--accent2));
+                     color: #0d0d14; border-color: transparent; }
+
+  /* FORM */
+  .form-group { margin-bottom: .85rem; }
+  .form-label { font-size: .78rem; color: var(--text2); font-weight: 600;
+                text-transform: uppercase; letter-spacing: .06em;
+                display: block; margin-bottom: .4rem; }
+  .form-input { width: 100%; padding: .7rem 1rem; background: var(--surface2);
+                border: 1px solid var(--border); border-radius: 10px; color: var(--text);
+                font-size: .9rem; transition: border-color .18s; outline: none; }
+  .form-input:focus { border-color: var(--accent3); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+  /* RESULT CARD */
+  .result-card {
+    margin-top: 1rem; padding: 1.5rem;
+    border-radius: var(--radius); border: 1px solid;
+    display: none;
+  }
+  .result-card.show { display: block; }
+  .result-joke { border-color: rgba(124,106,255,.4); background: linear-gradient(135deg, #1a0a2e, #0d1a3a); }
+  .result-roast { border-color: rgba(255,107,107,.4); background: linear-gradient(135deg, #2e0a0a, #1a0d0d); }
+  .result-meme { border-color: rgba(0,210,255,.3); background: var(--surface2); }
+  .result-text { font-size: 1.1rem; font-weight: 600; line-height: 1.6; color: var(--text); }
+  .result-img { width: 100%; border-radius: 10px; margin-top: .75rem; }
+
+  /* BATTLE */
+  .battle-link { background: rgba(124,106,255,.1); border: 1px solid rgba(124,106,255,.3);
+                 border-radius: 10px; padding: 1rem; margin-bottom: 1rem;
+                 font-size: .85rem; color: var(--text2); word-break: break-all; }
+  .battle-link strong { color: var(--accent3); display: block; margin-bottom: .3rem; font-size: .75rem; text-transform: uppercase; }
+  .joke-choice { width: 100%; text-align: left; padding: 1.25rem; border-radius: 12px;
+                 border: 1px solid var(--border); background: var(--surface2); color: var(--text);
+                 cursor: pointer; margin-bottom: .6rem; font-size: .95rem; font-weight: 600;
+                 transition: all .2s; }
+  .joke-choice:hover { border-color: var(--accent); }
+  .joke-choice.voted { border-color: var(--accent); background: rgba(245,166,35,.1); }
+  .joke-label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+                color: var(--accent); margin-bottom: .4rem; display: block; }
+
+  /* AUTH */
+  .auth-toggle { display: flex; gap: .4rem; background: var(--surface2);
+                 border-radius: 12px; padding: .35rem; margin-bottom: 1.25rem; }
+  .auth-tab { flex: 1; padding: .55rem; border-radius: 8px; border: none; cursor: pointer;
+              font-size: .85rem; font-weight: 700; background: transparent; color: var(--text2); transition: all .18s; }
+  .auth-tab.active { background: var(--surface); color: var(--text);
+                     box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .token-badge { font-size: .72rem; padding: .2rem .6rem; border-radius: 999px;
+                 background: rgba(0,230,118,.12); color: var(--green);
+                 border: 1px solid rgba(0,230,118,.25); }
+
+  /* MEME IMG */
+  #meme-out { display: none; margin-top: 1rem; }
+  #meme-out.show { display: block; }
+  #meme-out img { width: 100%; border-radius: 12px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px);
+           background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+           padding: .75rem 1.25rem; font-size: .88rem; font-weight: 600; z-index: 999;
+           transition: transform .3s; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>😂 JokeAI API</h1>
-  <p class="sub">Production-ready AI humor platform · Running live</p>
-  <div class="status">🤖 Claude AI: {ai_status}</div>
 
-  <!-- QUICK DEMO -->
-  <div class="try-section">
-    <h3>⚡ Quick Demo — Get a Joke</h3>
-    <div class="row">
-      <div>
-        <label>Humor Style</label>
-        <div id="type-pills">
-          {''.join(f'<span class="pill{" active" if t in ["dad jokes","absurd humor"] else ""}" onclick="togglePill(this)">{t}</span>'
-            for t in ["dad jokes","tech jokes","relationship jokes","absurd humor","dark humor","work humor"])}
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div style="flex:1">
-        <label>Intensity (1-5)</label>
-        <input type="range" id="intensity-slider" min="1" max="5" value="3" oninput="document.getElementById('intensity-val').textContent=this.value" style="background:transparent;border:none;padding:.25rem 0">
-        <span id="intensity-val" style="font-size:.8rem;color:#fbbf24">3</span>
-      </div>
-      <div style="flex:1">
-        <label>Language</label>
-        <select id="lang-select"><option value="en">🇺🇸 English</option><option value="he">🇮🇱 Hebrew</option></select>
-      </div>
-    </div>
-    <button class="btn" onclick="getJoke()">😂 Get Joke</button>
-    <div class="result" id="joke-result"></div>
-  </div>
-
-  <!-- ROAST DEMO -->
-  <div class="try-section">
-    <h3>🔥 Roast a Friend</h3>
-    <div class="row">
-      <div style="flex:1"><label>Name</label><input id="r-name" placeholder="e.g. Alex" value="Alex"></div>
-      <div style="flex:1"><label>Job</label><input id="r-job" placeholder="e.g. Developer" value="Software Developer"></div>
-    </div>
-    <div class="row">
-      <div style="flex:1"><label>Fun Fact</label><input id="r-fact" placeholder="e.g. Never closes browser tabs" value="Has 200 browser tabs open"></div>
-    </div>
-    <button class="btn" onclick="roastFriend()">🔥 Roast!</button>
-    <div class="result" id="roast-result"></div>
-  </div>
-
-  <!-- MEME DEMO -->
-  <div class="try-section">
-    <h3>🖼️ Generate a Meme</h3>
-    <div class="row">
-      <div style="flex:1"><label>Joke Text</label><input id="meme-text" placeholder="Enter a joke..." value="I told my computer I needed a break. Now it won't stop sending me Kit-Kat ads."></div>
-    </div>
-    <button class="btn" onclick="makeMeme()">🖼️ Make Meme</button>
-    <div class="result" id="meme-result"></div>
-    <div class="img-out" id="meme-img-out"><img id="meme-img" src="" alt="Generated meme"></div>
-  </div>
-
-  <!-- REGISTER DEMO -->
-  <div class="try-section">
-    <h3>👤 Register Account</h3>
-    <div class="row">
-      <div style="flex:1"><label>Email</label><input id="reg-email" type="email" placeholder="test@example.com" value="demo@jokeai.app"></div>
-      <div style="flex:1"><label>Username</label><input id="reg-username" placeholder="jokester" value="jokester99"></div>
-    </div>
-    <div class="row">
-      <div style="flex:1"><label>Password</label><input id="reg-password" type="password" placeholder="min 8 chars" value="password123"></div>
-    </div>
-    <div style="margin:.5rem 0;font-size:.8rem;color:#71717a">✅ age_verified + accepted_tos auto-set to true for demo</div>
-    <button class="btn" onclick="register()">Create Account</button>
-    <button class="btn btn-outline" style="margin-left:.5rem" onclick="loginDemo()">Login with Demo Account</button>
-    <div class="result" id="auth-result"></div>
-  </div>
-
-  <!-- ENDPOINTS REFERENCE -->
-  <div class="grid">
-    ${ _endpoint_cards() }
-  </div>
-
-  <footer>JokeAI MVP · Flask + SQLite + Anthropic Claude · Built with ❤️</footer>
+<div class="header">
+  <div class="logo">😂 JokeAI</div>
+  <div class="ai-badge" id="ai-badge">""" + ai_status + """</div>
 </div>
 
+<div class="tabs">
+  <button class="tab active" onclick="showTab('jokes',this)">😂 Jokes</button>
+  <button class="tab" onclick="showTab('roast',this)">🔥 Roast</button>
+  <button class="tab" onclick="showTab('meme',this)">🖼️ Meme</button>
+  <button class="tab" onclick="showTab('battle',this)">⚔️ Battle</button>
+  <button class="tab" onclick="showTab('auth',this)">👤 Account</button>
+</div>
+
+<div class="main">
+
+<!-- ── JOKES ── -->
+<div class="panel active" id="panel-jokes">
+  <div class="joke-box" id="joke-box">
+    <p class="joke-empty">Hit "Get Joke" to start laughing 😄</p>
+  </div>
+
+  <div class="rating-row" id="rating-row" style="display:none;margin-bottom:.75rem">
+    <button class="rate-btn" onclick="rate('like')">👍 Like</button>
+    <button class="rate-btn" onclick="rate('dislike')">👎 Dislike</button>
+    <button class="rate-btn" onclick="rate('favorite')">❤️ Save</button>
+  </div>
+
+  <div class="actions" id="joke-actions" style="display:none">
+    <button class="btn btn-secondary" onclick="shareJoke('whatsapp')">💬 WhatsApp</button>
+    <button class="btn btn-secondary" onclick="shareJoke('telegram')">✈️ Telegram</button>
+    <button class="btn btn-secondary" onclick="shareJoke('copy')">📋 Copy</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎛️ Customize</div>
+
+    <div class="filters">
+      <div class="filter-label">Humor Style</div>
+      <div class="pills" id="humor-pills">
+        <span class="pill on" data-val="dad jokes">👨 Dad Jokes</span>
+        <span class="pill on" data-val="absurd humor">🌀 Absurd</span>
+        <span class="pill" data-val="tech jokes">💻 Tech</span>
+        <span class="pill" data-val="relationship jokes">💕 Relationship</span>
+        <span class="pill" data-val="dark humor">🖤 Dark</span>
+        <span class="pill" data-val="work humor">💼 Work</span>
+      </div>
+    </div>
+
+    <div class="intensity-row">
+      <label>Intensity</label>
+      <input type="range" min="1" max="5" value="3" id="intensity"
+             oninput="document.getElementById('ival').textContent='Level '+this.value">
+      <span class="intensity-val" id="ival">Level 3</span>
+    </div>
+
+    <div class="filter-label">Language</div>
+    <div class="lang-row" style="margin-bottom:1rem">
+      <button class="lang-btn on" id="lang-en" onclick="setLang('en')">🇺🇸 English</button>
+      <button class="lang-btn" id="lang-he" onclick="setLang('he')">🇮🇱 עברית</button>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="joke-btn" onclick="getJoke()">
+      😂 Get Joke
+    </button>
+    <button class="btn btn-secondary btn-full" id="next-btn" onclick="getJoke()" style="margin-top:.5rem;display:none">
+      ➡ Next Joke
+    </button>
+  </div>
+</div>
+
+<!-- ── ROAST ── -->
+<div class="panel" id="panel-roast">
+  <div class="card">
+    <div class="card-title">🔥 Roast a Friend</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input class="form-input" id="r-name" placeholder="e.g. Alex">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job</label>
+        <input class="form-input" id="r-job" placeholder="e.g. Developer">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fun Fact</label>
+      <input class="form-input" id="r-fact" placeholder="e.g. Has 200 browser tabs open">
+    </div>
+    <button class="btn btn-danger btn-full" id="roast-btn" onclick="roastFriend()">🔥 Roast Them!</button>
+    <div class="result-card result-roast" id="roast-result">
+      <div class="result-text" id="roast-text"></div>
+      <div class="share-row" style="margin-top:1rem">
+        <button class="share-btn share-wa" onclick="shareRoast('whatsapp')">💬 WhatsApp</button>
+        <button class="share-btn share-tg" onclick="shareRoast('telegram')">✈️ Telegram</button>
+        <button class="share-btn share-cp" onclick="shareRoast('copy')">📋 Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📸 Roast My Photo</div>
+    <label style="display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:2rem;border:1px dashed var(--border);border-radius:12px;cursor:pointer;transition:border-color .18s" id="photo-drop">
+      <span style="font-size:2.5rem">📸</span>
+      <span style="color:var(--text2);font-size:.9rem;font-weight:600" id="photo-label">Upload a photo to roast</span>
+      <input type="file" accept="image/*" id="photo-input" style="display:none" onchange="roastPhoto(this)">
+    </label>
+    <div class="result-card result-roast" id="photo-result">
+      <div class="result-text" id="photo-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MEME ── -->
+<div class="panel" id="panel-meme">
+  <div class="card">
+    <div class="card-title">🖼️ Generate a Meme</div>
+    <div class="form-group">
+      <label class="form-label">Joke Text</label>
+      <input class="form-input" id="meme-text"
+             placeholder="Enter a joke or get one from the Jokes tab"
+             value="I told my computer I needed a break. Now it won't stop sending me Kit-Kat ads.">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Template</label>
+      <select class="form-input" id="meme-template">
+        <option value="">🎲 Random</option>
+      </select>
+    </div>
+    <button class="btn btn-purple btn-full" id="meme-btn" onclick="makeMeme()">🖼️ Generate Meme</button>
+    <div id="meme-out">
+      <img id="meme-img" src="" alt="Generated meme">
+      <div class="share-row" style="margin-top:.75rem">
+        <button class="share-btn share-wa" onclick="shareMeme('whatsapp')">💬 WhatsApp</button>
+        <button class="share-btn share-cp" onclick="shareMeme('copy')">🔗 Copy Link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BATTLE ── -->
+<div class="panel" id="panel-battle">
+  <div class="card">
+    <div class="card-title">⚔️ Joke Battle</div>
+    <p style="color:var(--text2);font-size:.9rem;margin-bottom:1rem">Challenge a friend! Each gets an AI joke. Vote who's funnier.</p>
+    <div id="battle-lobby">
+      <button class="btn btn-purple btn-full" id="battle-btn" onclick="createBattle()">⚔️ Start a Battle</button>
+    </div>
+    <div id="battle-active" style="display:none">
+      <div class="battle-link">
+        <strong>📤 Send this link to your friend</strong>
+        <span id="battle-url"></span>
+        <button class="share-btn share-cp" style="margin-top:.5rem;width:100%" onclick="copyBattleLink()">📋 Copy Link</button>
+      </div>
+      <button class="joke-choice" id="choice-a" onclick="vote('a')">
+        <span class="joke-label">Your Joke</span>
+        <span id="joke-a-text"></span>
+      </button>
+      <button class="joke-choice" id="choice-b" onclick="vote('b')" style="opacity:.5">
+        <span class="joke-label">Friend's Joke</span>
+        <span id="joke-b-text">Waiting for friend to join...</span>
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="resetBattle()" style="margin-top:.5rem">← New Battle</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACCOUNT ── -->
+<div class="panel" id="panel-auth">
+  <div class="card" id="auth-card">
+    <div class="auth-toggle">
+      <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Sign In</button>
+      <button class="auth-tab" id="tab-register" onclick="setAuthMode('register')">Register</button>
+    </div>
+    <div class="form-group" id="username-group" style="display:none">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="reg-username" placeholder="e.g. jokester99">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="auth-email" type="email" placeholder="you@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="auth-password" type="password" placeholder="Min 8 characters">
+    </div>
+    <div id="tos-group" style="display:none;margin-bottom:1rem">
+      <label style="display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;font-size:.83rem;color:var(--text2)">
+        <input type="checkbox" id="tos-check" style="margin-top:2px;accent-color:var(--accent)">
+        I'm 18+ and accept the Terms — jokes may include satire
+      </label>
+    </div>
+    <button class="btn btn-primary btn-full" id="auth-btn" onclick="doAuth()">Sign In</button>
+    <div class="result-card" id="auth-result" style="margin-top:.75rem;border-color:rgba(255,107,107,.3);background:rgba(255,107,107,.05)">
+      <div class="result-text" id="auth-msg" style="font-size:.9rem"></div>
+    </div>
+  </div>
+  <div class="card" id="profile-card" style="display:none">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.4rem">😂</div>
+      <div>
+        <div style="font-weight:800" id="profile-name">—</div>
+        <div class="token-badge">✅ Signed in</div>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-full" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<div class="toast" id="toast"></div>
+
 <script>
-let TOKEN = localStorage.getItem('jokeai_token') || '';
+let TOKEN = localStorage.getItem('jk_token') || '';
+let currentJoke = null;
+let currentRoast = '';
+let battleId = null;
+let battleUrl = '';
+let currentRating = null;
+let lang = 'en';
 
-function togglePill(el) {{
-  el.classList.toggle('active');
-}}
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
 
-function getSelectedTypes() {{
-  return [...document.querySelectorAll('#type-pills .pill.active')].map(p => p.textContent);
-}}
+async function api(method, path, body=null) {
+  const h = {'Content-Type':'application/json'};
+  if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const r = await fetch(path, {method, headers:h, body: body ? JSON.stringify(body) : null, signal: ctrl.signal});
+    clearTimeout(timer);
+    const ct = r.headers.get('content-type') || '';
+    if (ct.includes('json')) return [r.ok, await r.json()];
+    return [r.ok, {error: await r.text()}];
+  } catch(e) {
+    clearTimeout(timer);
+    return [false, {error: e.name === 'AbortError' ? 'Request timed out' : e.message}];
+  }
+}
 
-async function api(method, path, body=null, token=TOKEN) {{
-  const headers = {{'Content-Type':'application/json'}};
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  const opts = {{method, headers}};
-  if (body) opts.body = JSON.stringify(body);
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
-  try {{
-    const r = await fetch(path, {{...opts, signal: controller.signal}});
-    clearTimeout(timeout);
-    return [r.status, await r.json()];
-  }} catch(e) {{
-    clearTimeout(timeout);
-    if (e.name === 'AbortError') return [408, {{error: 'Request timed out — please try again'}}];
-    return [500, {{error: e.message}}];
-  }}
-}}
-
-function show(id, data) {{
-  const el = document.getElementById(id);
-  el.textContent = JSON.stringify(data, null, 2);
-  el.classList.add('show');
-}}
-
-function setBtn(id, loading, text) {{
+function setLoading(id, loading, text) {
   const b = document.getElementById(id);
   if (!b) return;
   b.disabled = loading;
-  b.textContent = loading ? '⏳ ' + text : b.dataset.orig || b.textContent;
-  if (!loading && b.dataset.orig) b.textContent = b.dataset.orig;
-}}
+  if (loading) { b.dataset.orig = b.innerHTML; b.innerHTML = '⏳ ' + text; }
+  else if (b.dataset.orig) b.innerHTML = b.dataset.orig;
+}
 
-document.addEventListener('DOMContentLoaded', () => {{
-  document.querySelectorAll('.btn').forEach(b => b.dataset.orig = b.textContent);
-}});
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  el.classList.add('active');
+}
 
-async function getJoke() {{
-  const btn = document.querySelector('[onclick="getJoke()"]');
-  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Thinking...';
-  const lang = document.getElementById('lang-select').value;
-  const [status, data] = await api('GET', `/api/jokes/generate?lang=${{lang}}`);
-  btn.disabled=false; btn.textContent=orig;
-  if (data.error) {{ show('joke-result', {{error: data.error}}); return; }}
-  show('joke-result', {{
-    joke: data.text,
-    category: data.category,
-    source: data.source,
-    _hint: TOKEN ? 'Authenticated — ratings saved' : 'Sign in to save ratings'
-  }});
-}}
+// ── FILTERS ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('#humor-pills .pill').forEach(p => {
+  p.onclick = () => p.classList.toggle('on');
+});
 
-async function roastFriend() {{
-  const btn = document.querySelector('[onclick="roastFriend()"]');
-  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Roasting...';
-  const name = document.getElementById('r-name').value;
-  const job  = document.getElementById('r-job').value;
-  const fact = document.getElementById('r-fact').value;
-  if (!name || !job || !fact) {{ btn.disabled=false; btn.textContent=orig; show('roast-result', {{error: 'Fill in all fields!'}}); return; }}
-  const [s, d] = await api('POST', '/api/roast/friend', {{name, job, fact}});
-  btn.disabled=false; btn.textContent=orig;
-  show('roast-result', d.error ? d : {{roast: d.text, share: d.shareText}});
-}}
+function getHumorTypes() {
+  const pills = [...document.querySelectorAll('#humor-pills .pill.on')];
+  return pills.length ? pills.map(p => p.dataset.val) : ['dad jokes'];
+}
 
-async function makeMeme() {{
-  const btn = document.querySelector('[onclick="makeMeme()"]');
-  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Creating meme...';
-  const text = document.getElementById('meme-text').value;
-  if (!text) {{ btn.disabled=false; btn.textContent=orig; show('meme-result', {{error: 'Enter some joke text!'}}); return; }}
-  const [s, d] = await api('POST', '/api/meme/generate', {{joke_text: text}});
-  btn.disabled=false; btn.textContent=orig;
-  show('meme-result', d);
-  if (d.url) {{
-    const img = document.getElementById('meme-img');
-    img.src = d.url;
-    document.getElementById('meme-img-out').classList.add('show');
-  }}
-}}
+function setLang(l) {
+  lang = l;
+  document.getElementById('lang-en').classList.toggle('on', l === 'en');
+  document.getElementById('lang-he').classList.toggle('on', l === 'he');
+}
 
-async function register() {{
-  const btn = document.querySelector('[onclick="register()"]');
-  const orig = btn.textContent; btn.disabled=true; btn.textContent='⏳ Creating...';
-  const email    = document.getElementById('reg-email').value;
-  const username = document.getElementById('reg-username').value;
-  const password = document.getElementById('reg-password').value;
-  const [s, d] = await api('POST', '/api/auth/register', {{email, username, password, age_verified:true, accepted_tos:true}});
-  btn.disabled=false; btn.textContent=orig;
-  show('auth-result', d);
-  if (d.token) {{ TOKEN = d.token; localStorage.setItem('jokeai_token', TOKEN); }}
-}}
+// ── JOKES ─────────────────────────────────────────────────────────────────────
+async function getJoke() {
+  setLoading('joke-btn', true, 'Generating...');
+  const types = getHumorTypes();
+  const intensity = document.getElementById('intensity').value;
+  const [ok, data] = await api('GET', `/api/jokes/generate?lang=${lang}&intensity=${intensity}&types=${encodeURIComponent(types.join(','))}`);
+  setLoading('joke-btn', false);
+  if (!ok || data.error) { toast('❌ ' + (data.error || 'Failed')); return; }
 
-async function loginDemo() {{
-  const email    = document.getElementById('reg-email').value;
-  const password = document.getElementById('reg-password').value;
-  const [s, d] = await api('POST', '/api/auth/login', {{email, password}});
-  show('auth-result', d);
-  if (d.token) {{ TOKEN = d.token; localStorage.setItem('jokeai_token', TOKEN); }}
-}}
+  currentJoke = data;
+  currentRating = null;
+  document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('active'));
+
+  const box = document.getElementById('joke-box');
+  const srcLabel = data.source === 'ai' ? '✨ Fresh AI' : data.source === 'pool' ? '💾 Pool' : '⚡ Cached';
+  box.innerHTML = `
+    <p class="joke-text" dir="${lang==='he'?'rtl':'ltr'}">${data.text}</p>
+    <div class="joke-meta">
+      <span class="badge badge-cat">${data.category}</span>
+      <span class="badge badge-src">${srcLabel}</span>
+    </div>`;
+
+  document.getElementById('rating-row').style.display = 'flex';
+  document.getElementById('joke-actions').style.display = 'flex';
+  document.getElementById('next-btn').style.display = 'block';
+  document.getElementById('meme-text').value = data.text;
+}
+
+async function rate(r) {
+  if (!currentJoke) return;
+  currentRating = r;
+  document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (!TOKEN) { toast('Sign in to save ratings'); return; }
+  await api('POST', '/api/jokes/rate', {joke_id: currentJoke.id, rating: r});
+  toast(r === 'favorite' ? '❤️ Saved to favorites!' : r === 'like' ? '👍 Liked!' : '👎 Noted');
+}
+
+function shareJoke(platform) {
+  if (!currentJoke) return;
+  const text = `😂 JokeAI\n\n${currentJoke.text}\n\nTry it: ${location.origin}`;
+  if (platform === 'copy') { navigator.clipboard.writeText(text); toast('📋 Copied!'); }
+  else if (platform === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(text));
+  else if (platform === 'telegram') window.open('https://t.me/share/url?url=' + encodeURIComponent(location.origin) + '&text=' + encodeURIComponent('😂 ' + currentJoke.text));
+}
+
+// ── ROAST ─────────────────────────────────────────────────────────────────────
+async function roastFriend() {
+  const name = document.getElementById('r-name').value.trim();
+  const job  = document.getElementById('r-job').value.trim();
+  const fact = document.getElementById('r-fact').value.trim();
+  if (!name || !job || !fact) { toast('Fill in all fields!'); return; }
+  setLoading('roast-btn', true, 'Roasting...');
+  const [ok, data] = await api('POST', '/api/roast/friend', {name, job, fact});
+  setLoading('roast-btn', false);
+  if (!ok || data.error) { toast('❌ ' + (data.error || 'Failed')); return; }
+  currentRoast = data.shareText || data.text;
+  document.getElementById('roast-text').textContent = data.text || data.roast;
+  document.getElementById('roast-result').classList.add('show');
+}
+
+function shareRoast(platform) {
+  if (!currentRoast) return;
+  if (platform === 'copy') { navigator.clipboard.writeText(currentRoast); toast('📋 Copied!'); }
+  else if (platform === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(currentRoast));
+  else if (platform === 'telegram') window.open('https://t.me/share/url?url=' + encodeURIComponent(location.origin) + '&text=' + encodeURIComponent(currentRoast));
+}
+
+async function roastPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  document.getElementById('photo-label').textContent = '⏳ Analyzing photo...';
+  const form = new FormData(); form.append('photo', file);
+  const h = {}; if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
+  try {
+    const r = await fetch('/api/roast/photo', {method:'POST', headers:h, body:form});
+    const data = await r.json();
+    document.getElementById('photo-label').textContent = 'Upload a photo to roast';
+    if (data.error) { toast('❌ ' + data.error); return; }
+    document.getElementById('photo-text').textContent = data.text;
+    document.getElementById('photo-result').classList.add('show');
+  } catch(e) { document.getElementById('photo-label').textContent = 'Upload a photo to roast'; toast('❌ Failed'); }
+}
+
+// ── MEME ──────────────────────────────────────────────────────────────────────
+async function loadTemplates() {
+  const [ok, data] = await api('GET', '/api/meme/templates');
+  if (!ok) return;
+  const sel = document.getElementById('meme-template');
+  data.templates.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name;
+    sel.appendChild(o);
+  });
+}
+
+async function makeMeme() {
+  const text = document.getElementById('meme-text').value.trim();
+  const tid  = document.getElementById('meme-template').value;
+  if (!text) { toast('Enter some joke text!'); return; }
+  setLoading('meme-btn', true, 'Creating meme...');
+  const body = {joke_text: text};
+  if (tid) body.template_id = tid;
+  const [ok, data] = await api('POST', '/api/meme/generate', body);
+  setLoading('meme-btn', false);
+  if (!ok || data.error) { toast('❌ ' + (data.error || 'Failed')); return; }
+  document.getElementById('meme-img').src = data.url;
+  document.getElementById('meme-out').classList.add('show');
+}
+
+function shareMeme(platform) {
+  const url = location.origin + document.getElementById('meme-img').src.replace(location.origin,'');
+  if (platform === 'copy') { navigator.clipboard.writeText(url); toast('🔗 Link copied!'); }
+  else if (platform === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent('😂 Check this meme: ' + url));
+}
+
+// ── BATTLE ────────────────────────────────────────────────────────────────────
+async function createBattle() {
+  setLoading('battle-btn', true, 'Creating...');
+  const [ok, data] = await api('POST', '/api/battle/create', {});
+  setLoading('battle-btn', false);
+  if (!ok || data.error) { toast('❌ ' + (data.error || 'Failed')); return; }
+  battleId  = data.battleId;
+  battleUrl = data.challengeUrl;
+  document.getElementById('battle-url').textContent = battleUrl;
+  document.getElementById('joke-a-text').textContent = data.jokeA;
+  document.getElementById('battle-lobby').style.display = 'none';
+  document.getElementById('battle-active').style.display = 'block';
+}
+
+function copyBattleLink() {
+  navigator.clipboard.writeText(battleUrl); toast('🔗 Battle link copied!');
+}
+
+async function vote(side) {
+  if (!battleId) return;
+  const [ok] = await api('POST', `/api/battle/${battleId}/vote`, {voted_for: side});
+  if (ok) {
+    document.getElementById('choice-' + side).classList.add('voted');
+    document.querySelectorAll('.joke-choice').forEach(b => b.disabled = true);
+    toast(side === 'a' ? '✅ Voted for your joke!' : '✅ Voted for friend's joke!');
+  }
+}
+
+function resetBattle() {
+  battleId = null; battleUrl = '';
+  document.getElementById('battle-lobby').style.display = 'block';
+  document.getElementById('battle-active').style.display = 'none';
+  document.querySelectorAll('.joke-choice').forEach(b => { b.classList.remove('voted'); b.disabled = false; });
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function setAuthMode(mode) {
+  document.getElementById('username-group').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('tos-group').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-btn').textContent = mode === 'register' ? '🎉 Create Account' : '🚀 Sign In';
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('auth-btn').dataset.mode = mode;
+}
+
+async function doAuth() {
+  const mode = document.getElementById('auth-btn').dataset.mode || 'login';
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const username = document.getElementById('reg-username').value.trim();
+  if (!email || !password) { toast('Fill in email and password'); return; }
+  if (mode === 'register' && !document.getElementById('tos-check').checked) {
+    toast('Please accept the terms'); return;
+  }
+  setLoading('auth-btn', true, mode === 'login' ? 'Signing in...' : 'Creating...');
+  const body = mode === 'login'
+    ? {email, password}
+    : {email, password, username, age_verified: true, accepted_tos: true};
+  const [ok, data] = await api('POST', `/api/auth/${mode}`, body);
+  setLoading('auth-btn', false);
+  if (data.token) {
+    TOKEN = data.token;
+    localStorage.setItem('jk_token', TOKEN);
+    showProfile(username || email.split('@')[0]);
+    toast('✅ Welcome!');
+  } else {
+    document.getElementById('auth-msg').textContent = data.error || 'Something went wrong';
+    document.getElementById('auth-result').classList.add('show');
+  }
+}
+
+function showProfile(name) {
+  document.getElementById('auth-card').style.display = 'none';
+  document.getElementById('profile-card').style.display = 'block';
+  document.getElementById('profile-name').textContent = '@' + name;
+}
+
+function logout() {
+  TOKEN = ''; localStorage.removeItem('jk_token');
+  document.getElementById('auth-card').style.display = 'block';
+  document.getElementById('profile-card').style.display = 'none';
+  toast('👋 Signed out');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('auth-btn').dataset.mode = 'login';
+loadTemplates();
+if (TOKEN) {
+  showProfile(localStorage.getItem('jk_username') || 'user');
+}
 </script>
 </body>
 </html>"""
-
-def _endpoint_cards():
-    cards = [
-        ("Auth", [
-            ("POST","/api/auth/register","Register new user"),
-            ("POST","/api/auth/login","Login → JWT"),
-            ("POST","/api/auth/verify-age","Mark 18+ verified"),
-        ]),
-        ("Jokes", [
-            ("GET","/api/jokes/generate","Get personalized joke"),
-            ("POST","/api/jokes/rate","Like / dislike / favorite"),
-            ("GET","/api/jokes/history","View history (auth)"),
-            ("GET","/api/jokes/favorites","Saved favorites (auth)"),
-            ("PUT","/api/jokes/preferences","Update humor prefs"),
-        ]),
-        ("Roast", [
-            ("POST","/api/roast/friend","Roast by name+job+fact"),
-            ("POST","/api/roast/photo","Roast uploaded photo"),
-        ]),
-        ("Meme", [
-            ("GET","/api/meme/templates","List meme templates"),
-            ("POST","/api/meme/generate","Generate meme image"),
-        ]),
-        ("Battle", [
-            ("POST","/api/battle/create","Start joke battle"),
-            ("POST","/api/battle/join/:token","Accept challenge"),
-            ("POST","/api/battle/:id/vote","Vote a or b"),
-            ("GET","/api/battle/:token","Get battle results"),
-        ]),
-        ("Profile", [
-            ("GET","/api/profile/me","Full profile + prefs"),
-            ("PUT","/api/profile/me","Update username/bio"),
-            ("POST","/api/profile/photo","Upload avatar photo"),
-            ("PUT","/api/profile/avatar-type","Switch cartoon/original"),
-        ]),
-    ]
-    method_class = {"GET":"get","POST":"post","PUT":"put"}
-    html = ""
-    for title, endpoints in cards:
-        html += f'<div class="card"><h3>{title}</h3>'
-        for method, path, desc in endpoints:
-            html += f'<div class="endpoint"><span class="method {method_class[method]}">{method}</span><span class="path" title="{desc}">{path}</span></div>'
-        html += "</div>"
-    return html
 
 # ── STARTUP ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
