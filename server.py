@@ -284,49 +284,56 @@ def get_prefs(user_id: str) -> dict:
     return row
 
 # ── AI Joke Generation ─────────────────────────────────────────────────────────
-ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 
-def call_claude(prompt: str, system: str = "", max_tokens: int = 300) -> str:
-    """Call Anthropic Claude API using the SDK."""
-    if not ANTHROPIC_KEY:
+def call_gemini(prompt: str, system: str = "", max_tokens: int = 300) -> str:
+    """Call Google Gemini API (free tier)."""
+    import urllib.request
+    if not GEMINI_KEY:
         return _fallback_joke(prompt)
+    full_prompt = (system + "\n\n" + prompt) if system else prompt
+    body = json.dumps({
+        "contents": [{"parts": [{"text": full_prompt}]}],
+        "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.9}
+    }).encode()
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-        kwargs = {
-            "model": "claude-sonnet-4-20250514",
-            "max_tokens": max_tokens,
-            "messages": [{"role": "user", "content": prompt}],
-        }
-        if system:
-            kwargs["system"] = system
-        msg = client.messages.create(**kwargs)
-        return msg.content[0].text.strip()
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read())
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode()
+        print(f"[AI] Gemini API {e.code}: {error_body[:300]}")
+        return _fallback_joke(prompt)
     except Exception as e:
-        print(f"[AI] Claude call failed: {type(e).__name__}: {e}")
+        print(f"[AI] Gemini call failed: {type(e).__name__}: {e}")
         return _fallback_joke(prompt)
 
-def call_claude_vision(prompt: str, image_b64: str, mime: str) -> str:
-    """Call Claude with an image using the SDK."""
-    if not ANTHROPIC_KEY:
+def call_gemini_vision(prompt: str, image_b64: str, mime: str) -> str:
+    """Call Gemini with an image (free tier supports vision)."""
+    import urllib.request
+    if not GEMINI_KEY:
         return "He looks like someone who just realized he sent that message to the wrong chat."
+    body = json.dumps({
+        "contents": [{"parts": [
+            {"inline_data": {"mime_type": mime, "data": image_b64}},
+            {"text": prompt}
+        ]}],
+        "generationConfig": {"maxOutputTokens": 200, "temperature": 0.9}
+    }).encode()
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
+    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-        msg = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=200,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": mime, "data": image_b64}},
-                    {"type": "text", "text": prompt}
-                ]
-            }]
-        )
-        return msg.content[0].text.strip()
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            data = json.loads(resp.read())
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode()
+        print(f"[AI] Gemini Vision {e.code}: {error_body[:300]}")
+        return "He looks like someone who just realized he sent that message to the wrong chat."
     except Exception as e:
-        print(f"[AI] Vision call failed: {type(e).__name__}: {e}")
+        print(f"[AI] Gemini Vision failed: {type(e).__name__}: {e}")
         return "He looks like someone who just realized he sent that message to the wrong chat."
 
 
@@ -402,7 +409,7 @@ def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
         return {**row, "source": "pool"}
 
     # Generate with AI
-    text = call_claude(build_joke_prompt(prefs))
+    text = call_gemini(build_joke_prompt(prefs))
     category = humor_types[0] if humor_types else "general"
     jid = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -525,7 +532,7 @@ def options_handler(p):
 # ── HEALTH ────────────────────────────────────────────────────────────────────
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(ANTHROPIC_KEY)})
+    return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(GEMINI_KEY)})
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 @app.route("/api/auth/register", methods=["POST"])
@@ -819,7 +826,7 @@ Rules:
 - Something they'd laugh at too
 - Return ONLY the roast text"""
 
-    text = call_claude(prompt)
+    text = call_gemini(prompt)
     share_text = f"😂 JokeAI just roasted {name}:\n\n\"{text}\"\n\nRoast your friends: {request.host_url}"
     return jsonify({"text": text, "shareText": share_text})
 
@@ -843,7 +850,7 @@ Rules:
 - 1-2 sentences max
 - Return ONLY the joke text"""
 
-    text = call_claude_vision(prompt, b64, file.mimetype)
+    text = call_gemini_vision(prompt, b64, file.mimetype)
     share_text = f"😂 JokeAI roasted my photo:\n\n\"{text}\"\n\nGet roasted: {request.host_url}"
     return jsonify({"text": text, "shareText": share_text})
 
@@ -976,7 +983,7 @@ def get_battle(token):
 # ── DEMO API EXPLORER (HTML) ───────────────────────────────────────────────────
 @app.route("/")
 def index():
-    ai_status = "✅ Claude AI Connected" if ANTHROPIC_KEY else "⚠️ Using joke pool (add ANTHROPIC_API_KEY)"
+    ai_status = "✅ Gemini AI Connected" if GEMINI_KEY else "⚠️ Using joke pool (add GEMINI_API_KEY)"
     return """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1693,13 +1700,13 @@ if __name__ == "__main__":
     print(f"{'='*55}")
     print(f"  URL:    http://localhost:{port}")
     print(f"  DB:     {DB_PATH}")
-    if ANTHROPIC_KEY:
-        print(f"  AI:     ✅ Claude (Anthropic) — live AI jokes!")
+    if GEMINI_KEY:
+        print(f"  AI:     ✅ Gemini (Google) — live AI jokes!")
     else:
         print(f"  AI:     ⚠️  Using joke pool (no API key set)")
         print(f"")
-        print(f"  To enable AI jokes, set your Anthropic key:")
-        print(f"  Windows:  set ANTHROPIC_API_KEY=sk-ant-...")
+        print(f"  To enable AI jokes, set your Gemini key:")
+        print(f"  Windows:  set GEMINI_API_KEY=AIza...")
         print(f"  Then restart:  python server.py")
     print(f"{'='*55}\n")
     app.run(host="0.0.0.0", port=port, debug=False)
