@@ -1629,7 +1629,7 @@ async function vote(side) {
   if (ok) {
     document.getElementById('choice-' + side).classList.add('voted');
     document.querySelectorAll('.joke-choice').forEach(b => b.disabled = true);
-    toast(side === 'a' ? '✅ Voted for your joke!' : '✅ Voted for friend's joke!');
+    toast(side === 'a' ? '✅ Voted for your joke!' : '✅ Voted for friend joke!');
   }
 }
 
