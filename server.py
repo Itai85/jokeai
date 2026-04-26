@@ -1575,8 +1575,9 @@ def index():
 <!-- ── JOKES ── -->
 <div class="panel active" id="panel-jokes">
   <div class="joke-box" id="joke-box">
-    <p class="joke-empty">Hit "Get Joke" to start laughing 😄</p>
+    <p class="joke-empty">Loading...</p>
   </div>
+  <div id="joke-counter" style="font-size:.7rem;color:var(--text2);text-align:right;padding:.1rem .5rem;opacity:.5;font-family:monospace">Pool: 0 | AI: 0</div>
 
   <div class="rating-row" id="rating-row" style="display:none;margin-bottom:.75rem">
     <button class="rate-btn" onclick="rate('like')">👍 Like</button>
@@ -1830,31 +1831,83 @@ function setLang(l) {
 }
 
 // ── JOKES ─────────────────────────────────────────────────────────────────────
-async function getJoke() {
-  setLoading('joke-btn', true, 'Generating...');
-  const types = getHumorTypes();
-  const [ok, data] = await api('GET', `/api/jokes/generate?lang=${lang}&intensity=${intensity}&types=${encodeURIComponent(types.join(','))}`);
-  setLoading('joke-btn', false);
-  if (!ok || data.error) { toast('❌ ' + (data.error || 'Failed')); return; }
+let jokeQueue = [];
+let isGenerating = false;
+let statsPool = 0, statsAI = 0;
 
+function updateCounter() {
+  const el = document.getElementById('joke-counter');
+  if (el) el.textContent = `Pool: ${statsPool} | AI: ${statsAI}`;
+}
+
+function showJoke(data) {
   currentJoke = data;
   currentRating = null;
   document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('active'));
-
+  if (data.source === 'ai') statsAI++; else statsPool++;
+  updateCounter();
   const box = document.getElementById('joke-box');
-  const srcLabel = data.source === 'ai' ? '✨ Fresh AI' : data.source === 'pool' ? '💾 Pool' : '⚡ Cached';
-  box.innerHTML = `
-    <p class="joke-text" dir="${lang==='he'?'rtl':'ltr'}">${data.text}</p>
-    <div class="joke-meta">
-      <span class="badge badge-cat">${data.category}</span>
-      <span class="badge badge-src">${srcLabel}</span>
-    </div>`;
-
+  const srcLabel = data.source === 'ai' ? '✨ AI' : '💾 Pool';
+  box.innerHTML = `<p class="joke-text" dir="${lang==='he'?'rtl':'ltr'}">${data.text}</p><div class="joke-meta"><span class="badge badge-cat">${data.category||''}</span><span class="badge badge-src">${srcLabel}</span></div>`;
   document.getElementById('rating-row').style.display = 'flex';
   document.getElementById('joke-actions').style.display = 'flex';
   document.getElementById('next-btn').style.display = 'block';
-  document.getElementById('meme-text').value = data.text;
+  const mt = document.getElementById('meme-text');
+  if (mt) mt.value = data.text;
 }
+
+function bgGenerate(params) {
+  if (isGenerating) return;
+  isGenerating = true;
+  fetch('/api/jokes/generate?' + params)
+    .then(r => r.json())
+    .then(d => { if (d && d.text && d.source === 'ai') jokeQueue.push(d); })
+    .catch(() => {})
+    .finally(() => { isGenerating = false; });
+}
+
+async function getJoke() {
+  const types = getHumorTypes();
+  const params = `lang=${lang}&types=${encodeURIComponent(types.join(','))}`;
+  const btn = document.getElementById('joke-btn');
+
+  // If queued AI joke available — show instantly
+  if (jokeQueue.length > 0) {
+    showJoke(jokeQueue.shift());
+    bgGenerate(params);
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Getting...'; }
+
+  // Race pool vs AI — 2 second limit
+  const poolP = fetch(`/api/jokes/quick?${params}`).then(r => r.json()).catch(() => null);
+  const aiP = new Promise(resolve => {
+    const t = setTimeout(() => resolve(null), 2000);
+    fetch(`/api/jokes/generate?${params}`)
+      .then(r => r.json())
+      .then(d => { clearTimeout(t); resolve(d && d.text ? d : null); })
+      .catch(() => { clearTimeout(t); resolve(null); });
+  });
+
+  const [pool, ai] = await Promise.all([poolP, aiP]);
+  if (btn) { btn.disabled = false; btn.innerHTML = '😂 Get Joke'; }
+
+  if (ai && ai.source === 'ai') {
+    showJoke(ai);
+    bgGenerate(params);
+  } else {
+    showJoke(pool && pool.text ? pool : { text: "Why do programmers prefer dark mode? Light attracts bugs.", category: "tech jokes", source: "pool" });
+    bgGenerate(params);
+  }
+}
+
+// Auto-load first joke on page open
+(function() {
+  const p = `lang=en&types=${encodeURIComponent('dad jokes,absurd humor')}`;
+  fetch(`/api/jokes/quick?${p}`).then(r=>r.json()).then(d=>{ if(d&&d.text) showJoke(d); }).catch(()=>{});
+  bgGenerate(p);
+})();
 
 async function rate(r) {
   if (!currentJoke) return;
