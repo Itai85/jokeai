@@ -1,8 +1,5 @@
-[phases.setup]
-nixPkgs = ["python313", "freetype"]
-
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+cmds = ["python -m pip install -r requirements.txt"]
 
 [start]
-cmd = "gunicorn server:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60"
+cmd = "gunicorn server:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
