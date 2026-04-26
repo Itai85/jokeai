@@ -341,8 +341,10 @@ def init_db():
         print(f"[DB] Init FAILED: {e}")
         raise
 
-# ── Run at import time (works with gunicorn AND direct python) ─────────────────
-init_db()
+# ── Run DB init in background thread so gunicorn responds to health check fast ──
+import threading
+_db_thread = threading.Thread(target=init_db, daemon=True)
+_db_thread.start()
 
 # ── Auth helpers ───────────────────────────────────────────────────────────────
 def hash_password(pw: str) -> str:
@@ -715,6 +717,9 @@ def options_handler(p):
 # ── HEALTH ────────────────────────────────────────────────────────────────────
 @app.route("/health")
 def health():
+    # Wait up to 10s for DB init if still running
+    if _db_thread.is_alive():
+        _db_thread.join(timeout=10)
     return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(AI_KEY), "provider": AI_PROVIDER})
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
