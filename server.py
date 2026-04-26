@@ -68,10 +68,11 @@ print(f"[PATHS] BASE_DIR={BASE_DIR} DB={DB_PATH} cloud={_is_cloud}")
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(str(DB_PATH))
+        g.db = sqlite3.connect(str(DB_PATH), timeout=30, check_same_thread=False)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA journal_mode=WAL")
         g.db.execute("PRAGMA foreign_keys=ON")
+        g.db.execute("PRAGMA busy_timeout=30000")
     return g.db
 
 @app.teardown_appcontext
@@ -346,10 +347,11 @@ def init_db():
         print(f"[DB] Init FAILED: {e}")
         raise
 
-# ── Run DB init in background thread so gunicorn responds to health check fast ──
+# ── Run DB init synchronously (WAL mode prevents lock contention) ──────────────
 import threading
-_db_thread = threading.Thread(target=init_db, daemon=True)
+_db_thread = threading.Thread(target=lambda: None, daemon=True)  # dummy for health check compat
 _db_thread.start()
+init_db()
 
 # ── Auth helpers ───────────────────────────────────────────────────────────────
 def hash_password(pw: str) -> str:
