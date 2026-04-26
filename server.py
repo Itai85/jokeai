@@ -408,24 +408,20 @@ def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
     def _try_groq():
         if not GROQ_KEY:
             return None
+        from groq import Groq
+        client = Groq(api_key=GROQ_KEY)
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
-        body = json.dumps({
-            "model": "llama-3.3-70b-versatile",
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": 0.9
-        }).encode()
-        req = urllib.request.Request(
-            "https://api.groq.com/openai/v1/chat/completions",
-            data=body,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_KEY}"},
-            method="POST"
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=0.9,
+            timeout=8
         )
-        with urllib.request.urlopen(req, timeout=8) as r:
-            return json.loads(r.read())["choices"][0]["message"]["content"].strip()
+        return completion.choices[0].message.content.strip()
 
     def _try_gemini():
         if not GEMINI_KEY:
@@ -470,22 +466,19 @@ def call_ai_vision(prompt: str, image_b64: str, mime: str) -> str:
     def _try_groq_vision():
         if not GROQ_KEY:
             return None
-        body = json.dumps({
-            "model": "llama-3.2-90b-vision-preview",
-            "messages": [{"role": "user", "content": [
+        from groq import Groq
+        client = Groq(api_key=GROQ_KEY)
+        completion = client.chat.completions.create(
+            model="llama-3.2-90b-vision-preview",
+            messages=[{"role": "user", "content": [
                 {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{image_b64}"}},
                 {"type": "text", "text": prompt}
             ]}],
-            "max_tokens": 200, "temperature": 0.9
-        }).encode()
-        req = urllib.request.Request(
-            "https://api.groq.com/openai/v1/chat/completions",
-            data=body,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_KEY}"},
-            method="POST"
+            max_tokens=200,
+            temperature=0.9,
+            timeout=10
         )
-        with urllib.request.urlopen(req, timeout=10) as r:
-            return json.loads(r.read())["choices"][0]["message"]["content"].strip()
+        return completion.choices[0].message.content.strip()
 
     def _try_gemini_vision():
         if not GEMINI_KEY:
