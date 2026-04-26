@@ -489,10 +489,11 @@ def get_prefs(user_id: str) -> dict:
     return row
 
 # ── AI Joke Generation ─────────────────────────────────────────────────────────
-GROQ_KEY   = os.getenv("GROQ_API_KEY", "")
-GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
-AI_KEY     = GROQ_KEY or GEMINI_KEY
-AI_PROVIDER = "groq" if GROQ_KEY else ("gemini" if GEMINI_KEY else "")
+ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GROQ_KEY      = os.getenv("GROQ_API_KEY", "")
+GEMINI_KEY    = os.getenv("GEMINI_API_KEY", "")
+AI_KEY        = ANTHROPIC_KEY or GROQ_KEY or GEMINI_KEY
+AI_PROVIDER   = "claude" if ANTHROPIC_KEY else ("groq" if GROQ_KEY else ("gemini" if GEMINI_KEY else ""))
 
 def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
     """Try Groq first (if key set), then Gemini — 8s timeout each."""
@@ -531,9 +532,27 @@ def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
         with urllib.request.urlopen(req, timeout=8) as r:
             return json.loads(r.read())["candidates"][0]["content"]["parts"][0]["text"].strip()
 
+    def _try_claude():
+        if not ANTHROPIC_KEY:
+            return None
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        msgs = []
+        if system:
+            msgs.append({"role": "user", "content": system + "\n\n" + prompt})
+        else:
+            msgs.append({"role": "user", "content": prompt})
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=max_tokens,
+            messages=msgs
+        )
+        return msg.content[0].text.strip()
+
     providers = []
-    if GROQ_KEY:   providers.append(("groq",   _try_groq))
-    if GEMINI_KEY: providers.append(("gemini", _try_gemini))
+    if ANTHROPIC_KEY: providers.append(("claude", _try_claude))
+    if GROQ_KEY:      providers.append(("groq",   _try_groq))
+    if GEMINI_KEY:    providers.append(("gemini", _try_gemini))
 
     for name, fn in providers:
         try:
@@ -590,9 +609,25 @@ def call_ai_vision(prompt: str, image_b64: str, mime: str) -> str:
         with urllib.request.urlopen(req, timeout=10) as r:
             return json.loads(r.read())["candidates"][0]["content"]["parts"][0]["text"].strip()
 
+    def _try_claude_vision():
+        if not ANTHROPIC_KEY:
+            return None
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=200,
+            messages=[{"role": "user", "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": mime, "data": image_b64}},
+                {"type": "text", "text": prompt}
+            ]}]
+        )
+        return msg.content[0].text.strip()
+
     providers = []
-    if GROQ_KEY:   providers.append(("groq",   _try_groq_vision))
-    if GEMINI_KEY: providers.append(("gemini", _try_gemini_vision))
+    if ANTHROPIC_KEY: providers.append(("claude", _try_claude_vision))
+    if GROQ_KEY:      providers.append(("groq",   _try_groq_vision))
+    if GEMINI_KEY:    providers.append(("gemini", _try_gemini_vision))
 
     for name, fn in providers:
         try:
@@ -1262,8 +1297,9 @@ def get_battle(token):
 @app.route("/")
 def index():
     providers_active = []
-    if GROQ_KEY:   providers_active.append("Groq")
-    if GEMINI_KEY: providers_active.append("Gemini")
+    if ANTHROPIC_KEY: providers_active.append("Claude")
+    if GROQ_KEY:      providers_active.append("Groq")
+    if GEMINI_KEY:    providers_active.append("Gemini")
     ai_status = ("✅ " + " + ".join(providers_active) + " Connected") if providers_active else "⚠️ Using joke pool"
     return """<!DOCTYPE html>
 <html lang="en">
