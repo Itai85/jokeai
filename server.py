@@ -15,6 +15,11 @@ from flask import Flask, request, jsonify, send_file, g
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB uploads
 
+# Register health immediately so Railway health check passes before DB init
+@app.route("/_health")
+def _health_instant():
+    return '{"status":"ok"}', 200, {'Content-Type': 'application/json'}
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     import traceback
@@ -717,9 +722,6 @@ def options_handler(p):
 # ── HEALTH ────────────────────────────────────────────────────────────────────
 @app.route("/health")
 def health():
-    # Wait up to 10s for DB init if still running
-    if _db_thread.is_alive():
-        _db_thread.join(timeout=10)
     return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(AI_KEY), "provider": AI_PROVIDER})
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
