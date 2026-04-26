@@ -1,5 +1,5 @@
 """
-Humora — Full Backend Server
+HaHaTown — Full Backend Server
 Flask · In-memory DB (SQLite) · JWT Auth · Anthropic AI · Pillow Meme Generator
 Run: python3 server.py
 """
@@ -30,7 +30,7 @@ def handle_404(e):
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
 import jwt as pyjwt
-JWT_SECRET = os.getenv("JWT_SECRET", "humora-dev-secret-change-in-production")
+JWT_SECRET = os.getenv("JWT_SECRET", "hahahtown-dev-secret-change-in-production")
 JWT_ALGO   = "HS256"
 JWT_EXP    = 30  # days
 
@@ -57,7 +57,7 @@ else:
     DB_PATH = BASE_DIR / "jokeai.db"
 
 # Media dirs
-_media_base = Path("/tmp/humora") if _is_cloud else BASE_DIR
+_media_base = Path("/tmp/hahahtown") if _is_cloud else BASE_DIR
 
 print(f"[PATHS] BASE_DIR={BASE_DIR} DB={DB_PATH} cloud={_is_cloud}")
 
@@ -381,17 +381,18 @@ def get_prefs(user_id: str) -> dict:
     return row
 
 # ── AI Joke Generation ─────────────────────────────────────────────────────────
-AI_KEY = os.getenv("GROQ_API_KEY", os.getenv("GEMINI_API_KEY", ""))
-AI_PROVIDER = "groq" if os.getenv("GROQ_API_KEY") else ("gemini" if os.getenv("GEMINI_API_KEY") else "")
+GROQ_KEY   = os.getenv("GROQ_API_KEY", "")
+GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
+AI_KEY     = GROQ_KEY or GEMINI_KEY
+AI_PROVIDER = "groq" if GROQ_KEY else ("gemini" if GEMINI_KEY else "")
 
 def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
-    """Call AI - supports Groq (free) and Gemini (free)."""
+    """Try Groq first (if key set), then Gemini — 8s timeout each."""
     import urllib.request
-    if not AI_KEY:
-        return _fallback_joke(prompt)
 
-    if AI_PROVIDER == "groq":
-        # Groq uses OpenAI-compatible API — free, fast, generous limits
+    def _try_groq():
+        if not GROQ_KEY:
+            return None
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
@@ -405,48 +406,55 @@ def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
         req = urllib.request.Request(
             "https://api.groq.com/openai/v1/chat/completions",
             data=body,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {AI_KEY}"
-            },
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_KEY}"},
             method="POST"
         )
-    else:
-        # Gemini
-        full_prompt = (system + "\n\n" + prompt) if system else prompt
+        with urllib.request.urlopen(req, timeout=8) as r:
+            return json.loads(r.read())["choices"][0]["message"]["content"].strip()
+
+    def _try_gemini():
+        if not GEMINI_KEY:
+            return None
+        full = (system + "\n\n" + prompt) if system else prompt
         body = json.dumps({
-            "contents": [{"parts": [{"text": full_prompt}]}],
+            "contents": [{"parts": [{"text": full}]}],
             "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.9}
         }).encode()
         req = urllib.request.Request(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={AI_KEY}",
-            data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST"
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}",
+            data=body, headers={"Content-Type": "application/json"}, method="POST"
         )
+        with urllib.request.urlopen(req, timeout=8) as r:
+            return json.loads(r.read())["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read())
-            if AI_PROVIDER == "groq":
-                return data["choices"][0]["message"]["content"].strip()
-            else:
-                return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        print(f"[AI] {AI_PROVIDER} API {e.code}: {error_body[:300]}")
-        return _fallback_joke(prompt)
-    except Exception as e:
-        print(f"[AI] {AI_PROVIDER} call failed: {type(e).__name__}: {e}")
-        return _fallback_joke(prompt)
+    providers = []
+    if GROQ_KEY:   providers.append(("groq",   _try_groq))
+    if GEMINI_KEY: providers.append(("gemini", _try_gemini))
+
+    for name, fn in providers:
+        try:
+            result = fn()
+            if result:
+                print(f"[AI] {name} OK")
+                return result
+        except urllib.error.HTTPError as e:
+            body = e.read().decode()[:200]
+            print(f"[AI] {name} {e.code}: {body}")
+        except Exception as e:
+            print(f"[AI] {name} failed: {type(e).__name__}: {e}")
+
+    print("[AI] All providers failed — using pool")
+    return _fallback_joke(prompt)
+
 
 def call_ai_vision(prompt: str, image_b64: str, mime: str) -> str:
-    """Call AI with an image — Groq (Llama Vision) or Gemini."""
+    """Vision: try Groq Llama Vision, fallback to Gemini."""
     import urllib.request
-    if not AI_KEY:
-        return "He looks like someone who just realized he sent that message to the wrong chat."
+    FALLBACK = "He looks like someone who just realized he sent that message to the wrong chat."
 
-    if AI_PROVIDER == "groq":
+    def _try_groq_vision():
+        if not GROQ_KEY:
+            return None
         body = json.dumps({
             "model": "llama-3.2-90b-vision-preview",
             "messages": [{"role": "user", "content": [
@@ -458,10 +466,15 @@ def call_ai_vision(prompt: str, image_b64: str, mime: str) -> str:
         req = urllib.request.Request(
             "https://api.groq.com/openai/v1/chat/completions",
             data=body,
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {AI_KEY}"},
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {GROQ_KEY}"},
             method="POST"
         )
-    else:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read())["choices"][0]["message"]["content"].strip()
+
+    def _try_gemini_vision():
+        if not GEMINI_KEY:
+            return None
         body = json.dumps({
             "contents": [{"parts": [
                 {"inline_data": {"mime_type": mime, "data": image_b64}},
@@ -470,24 +483,25 @@ def call_ai_vision(prompt: str, image_b64: str, mime: str) -> str:
             "generationConfig": {"maxOutputTokens": 200, "temperature": 0.9}
         }).encode()
         req = urllib.request.Request(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={AI_KEY}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}",
             data=body, headers={"Content-Type": "application/json"}, method="POST"
         )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return json.loads(r.read())["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-    try:
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            data = json.loads(resp.read())
-            if AI_PROVIDER == "groq":
-                return data["choices"][0]["message"]["content"].strip()
-            else:
-                return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode()
-        print(f"[AI] {AI_PROVIDER} Vision {e.code}: {error_body[:300]}")
-        return "He looks like someone who just realized he sent that message to the wrong chat."
-    except Exception as e:
-        print(f"[AI] {AI_PROVIDER} Vision failed: {type(e).__name__}: {e}")
-        return "He looks like someone who just realized he sent that message to the wrong chat."
+    providers = []
+    if GROQ_KEY:   providers.append(("groq",   _try_groq_vision))
+    if GEMINI_KEY: providers.append(("gemini", _try_gemini_vision))
+
+    for name, fn in providers:
+        try:
+            result = fn()
+            if result:
+                return result
+        except Exception as e:
+            print(f"[AI] {name} vision failed: {type(e).__name__}: {e}")
+
+    return FALLBACK
 
 
 def _fallback_joke(ctx: str = "") -> str:
@@ -641,7 +655,7 @@ def generate_meme_image(joke_text: str, template_name: str = "Drake Approves") -
 
     # Header bar
     draw.rectangle([(0, 0), (W, 80)], fill=(245, 158, 11))
-    draw.text((W // 2, 40), "😂  Humora", font=font_big, fill=(20, 20, 20), anchor="mm")
+    draw.text((W // 2, 40), "😂  HaHaTown", font=font_big, fill=(20, 20, 20), anchor="mm")
 
     # Template badge
     badge_text = f"[ {template_name} ]"
@@ -695,7 +709,7 @@ def options_handler(p):
 # ── HEALTH ────────────────────────────────────────────────────────────────────
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(AI_KEY)})
+    return jsonify({"status": "ok", "ts": int(time.time()), "ai_configured": bool(AI_KEY), "provider": AI_PROVIDER})
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 @app.route("/api/auth/register", methods=["POST"])
@@ -990,7 +1004,7 @@ Rules:
 - Return ONLY the roast text"""
 
     text = call_ai(prompt)
-    share_text = f"😂 Humora just roasted {name}:\n\n\"{text}\"\n\nRoast your friends: {request.host_url}"
+    share_text = f"😂 HaHaTown just roasted {name}:\n\n\"{text}\"\n\nRoast your friends: {request.host_url}"
     return jsonify({"text": text, "shareText": share_text})
 
 @app.route("/api/roast/photo", methods=["POST"])
@@ -1014,7 +1028,7 @@ Rules:
 - Return ONLY the joke text"""
 
     text = call_ai_vision(prompt, b64, file.mimetype)
-    share_text = f"😂 Humora roasted my photo:\n\n\"{text}\"\n\nGet roasted: {request.host_url}"
+    share_text = f"😂 HaHaTown roasted my photo:\n\n\"{text}\"\n\nGet roasted: {request.host_url}"
     return jsonify({"text": text, "shareText": share_text})
 
 # ── MEME ──────────────────────────────────────────────────────────────────────
@@ -1146,13 +1160,16 @@ def get_battle(token):
 # ── DEMO API EXPLORER (HTML) ───────────────────────────────────────────────────
 @app.route("/")
 def index():
-    ai_status = "✅ AI Connected (Groq/Gemini)" if AI_KEY else "⚠️ Using joke pool (add GROQ_API_KEY)"
+    providers_active = []
+    if GROQ_KEY:   providers_active.append("Groq")
+    if GEMINI_KEY: providers_active.append("Gemini")
+    ai_status = ("✅ " + " + ".join(providers_active) + " Connected") if providers_active else "⚠️ Using joke pool"
     return """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Humora 😂</title>
+<title>HaHaTown 😂</title>
 <style>
   :root {
     --bg: #0d0d14;
@@ -1369,7 +1386,7 @@ def index():
 <body>
 
 <div class="header">
-  <div class="logo">😂 Humora</div>
+  <div class="logo">😂 HaHaTown</div>
   <div style="display:flex;align-items:center;gap:.75rem">
     <button class="header-login" id="header-login-btn" onclick="showTab('auth',document.querySelector('[onclick*=auth]'))">👤 Sign In</button>
     <div class="ai-badge" id="ai-badge">""" + ai_status + """</div>
@@ -1682,7 +1699,7 @@ async function rate(r) {
 
 function shareJoke(platform) {
   if (!currentJoke) return;
-  const text = `😂 Humora\n\n${currentJoke.text}\n\nTry it: ${location.origin}`;
+  const text = `😂 HaHaTown\n\n${currentJoke.text}\n\nTry it: ${location.origin}`;
   if (platform === 'copy') { navigator.clipboard.writeText(text); toast('📋 Copied!'); }
   else if (platform === 'whatsapp') window.open('https://wa.me/?text=' + encodeURIComponent(text));
   else if (platform === 'telegram') window.open('https://t.me/share/url?url=' + encodeURIComponent(location.origin) + '&text=' + encodeURIComponent('😂 ' + currentJoke.text));
@@ -1860,7 +1877,7 @@ if __name__ == "__main__":
     init_db()
     port = int(os.getenv("PORT", 4000))
     print(f"\n{'='*55}")
-    print(f"  😂  Humora API Server")
+    print(f"  😂  HaHaTown API Server")
     print(f"{'='*55}")
     print(f"  URL:    http://localhost:{port}")
     print(f"  DB:     {DB_PATH}")
