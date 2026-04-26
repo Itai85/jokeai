@@ -408,6 +408,213 @@ SEED_JOKES = [
     ("My out-of-office reply is just my regular response time.", "work humor"),
 ]
 
+HE_SEED_JOKES = [
+    # DAD JOKES
+    ("למה הים תמיד מסכים? כי הוא אף פעם לא אומר לא.", "dad jokes"),
+    ("קניתי מקרר שרועש. עכשיו כל האוכל שלי מוזמוז.", "dad jokes"),
+    ("בנוגע לבדיחות על נייר - הן קורעות.", "dad jokes"),
+    ("שאלתי את הרופא שלי אם אני יכול לאמן את זיכרוני. הוא אמר שכחתי את התשובה.", "dad jokes"),
+    ("למה הציפורים עפות דרום בחורף? כי הליכה ארוכה מדי.", "dad jokes"),
+    ("קניתי נעליים מסוג אחד. עכשיו אני הולך בעיגולים.", "dad jokes"),
+    ("אמא שלי אמרה לי לאכול יותר ירקות. אכלתי שלוש חתיכות שוקולד ירוק.", "dad jokes"),
+    ("למה הדג שותק? כי לא רוצה להיתפס.", "dad jokes"),
+    ("אני כל כך טוב בשינה שאני יכול לעשות את זה בעיניים עצומות.", "dad jokes"),
+    ("שאלו אותי אם יש לי תוכנית לדיאטה. אמרתי כן - לאכול פחות.", "dad jokes"),
+    ("הרים לא מתעייפים. הם פשוט נחים בין פסגות.", "dad jokes"),
+    ("קניתי שעון שהולך שש שעות אחורה. עכשיו יש לי זמן.", "dad jokes"),
+    ("למה הקיר לא מדבר? כי יש לו מה להסתיר.", "dad jokes"),
+    ("אמרו לי שאני חסר תחושת הומור. צחקתי מזה.", "dad jokes"),
+    ("ניסיתי לכתוב בדיחה על מתמטיקה אבל כל הבדיחות כבר נספרו.", "dad jokes"),
+    ("קניתי מטריה שבורה. מזג האוויר אחרי זה היה מעולה.", "dad jokes"),
+    ("למה תוכי אוהב מתמטיקה? כי הוא יודע לספור.", "dad jokes"),
+    ("שאלו אותי מה השעה. עניתי מחרתיים בצהריים.", "dad jokes"),
+    ("אני מנסה לרדת במשקל. ירדתי מהמיטה בלילה.", "dad jokes"),
+    ("הארנב שלי אוהב מוזיקה. בעיקר ג'ז - הוא תמיד בקצב.", "dad jokes"),
+    ("למה עצים לא משחקים קלפים? כי הם תמיד מפסידים ביער.", "dad jokes"),
+    ("קניתי ספר על כיצד לא להיות עצלן. עדיין לא פתחתי אותו.", "dad jokes"),
+    ("הגבינה שאלה את החלב מה קרה לך. החלב ענה גדלתי.", "dad jokes"),
+    ("למה הכוכבים מנצנצים? כי ראו את חשבון החשמל שלנו.", "dad jokes"),
+    ("ניסיתי ללמוד ספרדית. אבל לא הצלחתי להסביר למה.", "dad jokes"),
+    ("שאלתי את הכלב שלי אם הוא רוצה לצאת לטיול. הנהן בראשו.", "dad jokes"),
+    ("קניתי גלידה שנמסה מהר. היה שם בכלל?", "dad jokes"),
+    ("למה הדלת לא נסגרת? כי היא פתוחה לרעיונות.", "dad jokes"),
+    ("אני לא עצלן, אני פשוט חוסך אנרגיה לדברים חשובים.", "dad jokes"),
+    ("שאלו אותי מה אני חושב על שקר. אמרתי לא יודע, מעולם לא ניסיתי.", "dad jokes"),
+    ("הקנגורו שאל את ציפור מה שלומך. ציפור ענתה טסה בסדר.", "dad jokes"),
+    ("למה הענן עצוב? כי הוא תמיד על דברים מעל הראש שלו.", "dad jokes"),
+    ("אמרו לי שאני אוהב לדבר הרבה. אמרתי כן.", "dad jokes"),
+    # TECH JOKES
+    ("למה המתכנת לא יוצא לחוץ? כי בחוץ יש יותר מדי באגים.", "tech jokes"),
+    ("שלחתי מייל לעצמי. הוא הגיע לספאם.", "tech jokes"),
+    ("הגדרתי סיסמה חזקה: לא_זוכר1234.", "tech jokes"),
+    ("AI ביקש ממני לפתור קפצ'ה. לא הצלחתי. הוא עבר.", "tech jokes"),
+    ("המחשב שלי הולך לאט. שאלתי אותו למה. הוא אמר שהוא בCPU.", "tech jokes"),
+    ("למה הנייד חם? כי הוא עובד שעות נוספות.", "tech jokes"),
+    ("עשיתי אתר על אינסוף. המיסגרת נשברה.", "tech jokes"),
+    ("שאלתי את ChatGPT בדיחה. הוא אמר שאינו יכול לספר בדיחות. זו הייתה הבדיחה.", "tech jokes"),
+    ("למה המתכנת לא אוהב טבע? כי יש שם עצים ללא ממשק.", "tech jokes"),
+    ("גיבויתי את כל הקבצים שלי. עכשיו יש לי פי שניים בעיות.", "tech jokes"),
+    ("הדפסתי על הענן. הנייר נרטב.", "tech jokes"),
+    ("ניסיתי לאתחל את היום. לא הצלחתי למצוא את כפתור ריסטרט.", "tech jokes"),
+    ("הייתה לי פגישת זום עם עצמי. הייתי מאוחר.", "tech jokes"),
+    ("למה המתכנת מעדיף חשיכה? כי אור מושך חרקים.", "tech jokes"),
+    ("קיבלתי עדכון מערכת. עכשיו כולם שואלים אם אני בסדר.", "tech jokes"),
+    ("למה הסמארטפון לא ישן? כי יש לו יותר מדי אפליקציות ברקע.", "tech jokes"),
+    ("ביקשתי מהמחשב לשחק משחק. הוא אמר שיש עדכון זמין קודם.", "tech jokes"),
+    ("למה WiFi דומה לאהבה? כי כשהוא נעלם, רק אז מרגישים אותו.", "tech jokes"),
+    ("כתבתי תוכנה ללא באגים. המחשב קרס.", "tech jokes"),
+    ("שאלתי את Siri מה הטוב ביותר בחיים. היא הציגה מפה לקפה.", "tech jokes"),
+    ("עשיתי גיבוי. המחשב שאל אם אני בטוח. אמרתי לא. ביצע גיבוי.", "tech jokes"),
+    ("למה המתכנת לא אוהב מסיבות? כי יש שם יותר מדי אנשים בלי API.", "tech jokes"),
+    ("שאלתי את האינטרנט שאלה. הוא ענה בעשרה פרסומות.", "tech jokes"),
+    ("למה הדיסק הקשיח עייף? כי הוא כל הלילה ספינינג.", "tech jokes"),
+    ("כתבתי קוד שעובד בפעם הראשונה. ידעתי שמשהו טעות.", "tech jokes"),
+    ("למה המחשב שלי כל כך חכם? כי הוא עשה הרבה RAM.", "tech jokes"),
+    ("שיניתי סיסמה לשגוי. עכשיו כשאני טועה, המחשב אומר לי שהסיסמה שגויה.", "tech jokes"),
+    ("המתכנת ביקש קפה. הקפה גמל תוצאות.", "tech jokes"),
+    ("למה הנייד שלי חכם ממני? כי יש לו גוגל.", "tech jokes"),
+    ("שאלתי את גוגל אם הוא יכול לשמור על סוד. הוא הציג לי חמישה מיליון תוצאות.", "tech jokes"),
+    ("הדלקתי את המחשב הישן שלי. הוא הזכיר לי לשדרג.", "tech jokes"),
+    ("שלחתי מסמך לPDF. הוא חזר כPPT.", "tech jokes"),
+    ("למה הדטאבייס עצוב? כי הוא שמר הרבה זכרונות שאיש לא ביקש.", "tech jokes"),
+    # RELATIONSHIP JOKES
+    ("אמרתי לאשתי שאני בצד שלה. היא אמרה שהצד שלה גדול מדי.", "relationship jokes"),
+    ("שאלתי את הבת זוג שלי מה היא רוצה ליום הולדת. אמרה לא כלום. קיבלה לא כלום.", "relationship jokes"),
+    ("הנישואים שלנו מושלמים. אנחנו מסכימים על כך שאנחנו חלוקים.", "relationship jokes"),
+    ("אשתי אמרה שאני לא מקשיב. לפחות אני חושב שהיא אמרה את זה.", "relationship jokes"),
+    ("הסכמנו שהיא תקבל החלטות קטנות ואני גדולות. 30 שנה ועדיין אין החלטות גדולות.", "relationship jokes"),
+    ("בן הזוג שלי ביקש שאהיה פחות דרמטי. קיפלתי את עצמי וישבתי בפינה.", "relationship jokes"),
+    ("אמרתי לאשתי שהיא מצחיקה אותי. היא אמרה שהיא יודעת.", "relationship jokes"),
+    ("היא אמרה שאני עצלן. אמרתי שאני אחשוב על זה מחר.", "relationship jokes"),
+    ("קיבלנו ויכוח על מה לאכול לארוחת ערב. עדיין מתכננים.", "relationship jokes"),
+    ("אשתי ביקשה שאהיה יותר רומנטי. קניתי לה פיצה לבבית.", "relationship jokes"),
+    ("הבת זוג שלי אמרה שאני לא שומע אותה. עניתי: מה?", "relationship jokes"),
+    ("שאלה אם אני אוהב אותה יותר מכדורגל. אמרתי כן בהפסקה.", "relationship jokes"),
+    ("אמרתי לאשתי שהיא יפה. היא שאלה: רק יפה?", "relationship jokes"),
+    ("הוא ביקש להיות חברים. אנחנו נשואים 20 שנה.", "relationship jokes"),
+    ("אמרתי שאעזור בבית. שלוש שנים מאוחר יותר עדיין מתכנן.", "relationship jokes"),
+    ("הם אמרו שהנישואים עבודה קשה. לא ידעתי שמדובר בעבודת לילה.", "relationship jokes"),
+    ("אשתי שאלה מה יותר חשוב לי. אמרתי היא. זה היה ספורט.", "relationship jokes"),
+    ("הוא אמר שאוהב אותי בדיוק כפי שאני. אז למה הוא מציע שיפורים?", "relationship jokes"),
+    ("קיבלנו רמקול חכם. עכשיו שלושה בבית מתעלמים ממני.", "relationship jokes"),
+    ("אמרתי שאקנה פרחים. הייתי עסוק. קניתי פלסטיק.", "relationship jokes"),
+    ("הם אמרו שאהבה עיוורת. הנישואים הם מרפאת עיניים.", "relationship jokes"),
+    ("שאלה: על מה אתה חושב? עניתי: כלום. היא לא האמינה.", "relationship jokes"),
+    ("הבת זוג ביקשה שנדבר יותר. מאז אני מדבר פחות.", "relationship jokes"),
+    ("זיכרון יחסינו: הוא זוכר הכל, אני זוכר שזה אי פעם היה טוב.", "relationship jokes"),
+    ("אמרתי לה שהיא בחיי הטובה שבה. היא שאלה מי השניה.", "relationship jokes"),
+    ("בן הזוג שלי לא מדבר אלי בזמן מריבה. אני נהנה מהשקט.", "relationship jokes"),
+    ("אמרה שאני רומנטי כמו חשבון חשמל. לפחות אני מגיע בזמן.", "relationship jokes"),
+    ("שאלתי מה מציק לה. אמרה: שאתה שואל. הפסקתי לשאול.", "relationship jokes"),
+    ("הסכמנו לאכול פחות. היא אוכלת פחות. אני אוכל פחות בפניה.", "relationship jokes"),
+    ("הם אמרו שמצאו את האדם המושלם. לא ספרו לאדם.", "relationship jokes"),
+    ("שאלה אם אני זוכר את הטיול הראשון שלנו. זכרתי אחרי שהיא סיפרה.", "relationship jokes"),
+    ("אמרתי שאתפוס את הדלת. פיספסתי. היא עדיין מחזיקה.", "relationship jokes"),
+    ("הוא אמר שנהיה יחד לנצח. נצח הסתיים מוקדם.", "relationship jokes"),
+    # ABSURD HUMOR
+    ("אם עצרת אתה זה, ואם עצרת בוודאי אתה.", "absurd humor"),
+    ("שאלתי את היקום סימן. קיבלתי עצירת אוטובוס.", "absurd humor"),
+    ("הירח שאל למה הוא עגול. כי לא יודע להיות אחרת.", "absurd humor"),
+    ("ניסיתי לחשוב מחוץ לקופסה. הקופסה חזרה בתשלום.", "absurd humor"),
+    ("אם תפוחי אדמה הם פירות, אז צ'יפס הוא מיץ.", "absurd humor"),
+    ("שאלתי את הזמן מה הוא. אמר שהוא יחסי.", "absurd humor"),
+    ("המראה שלי שאלה מה אני. עניתי שאלה טובה.", "absurd humor"),
+    ("חלמתי שאני ישן. הייתי עייף לאחר מכן.", "absurd humor"),
+    ("אם ענן נופל, האם גשם הוא ענן שנשבר?", "absurd humor"),
+    ("קניתי מפה. איבדתי אותה. עכשיו אני אבוד.", "absurd humor"),
+    ("ניסיתי לאכול שעון. זה היה זמן-אכילה.", "absurd humor"),
+    ("השכן שלי שאל אם יש לי שכן. הפכנו להיות.", "absurd humor"),
+    ("כתבתי ספר על שקט. הוא היה שקט מאוד.", "absurd humor"),
+    ("אם עץ נופל ביער ואיש לא שומע, האם הוא עדיין חייב בדמי ביטוח?", "absurd humor"),
+    ("שאלתי את הקיר שאלה. הוא לא ענה. קיר טוב.", "absurd humor"),
+    ("הדלת שלי פתוחה לרעיונות. היא גם פתוחה לכניסה.", "absurd humor"),
+    ("ניסיתי לתפוס את הזמן. הוא ממשיך לרוץ.", "absurd humor"),
+    ("המסעדה מציעה ארוחת בוקר כל היום. לפחות הם עקביים.", "absurd humor"),
+    ("קניתי שתיקה. היא כבר לא שקטה.", "absurd humor"),
+    ("שאלתי את הצל שלי לאן הוא הולך. הוא הלך אתי.", "absurd humor"),
+    ("ניסיתי לספות את הכוכבים. הם זזו.", "absurd humor"),
+    ("בלחם הייתה בועה. ניסיתי להוציאה. האופה לא הסכים.", "absurd humor"),
+    ("קפה ביקש ממני לנוח. שתיתי אותו.", "absurd humor"),
+    ("שאלתי את הרוח לאן היא הולכת. היא לא ענתה ונסעה.", "absurd humor"),
+    ("הכרית שלי שאלה אם אני נח. ישנתי את השאלה.", "absurd humor"),
+    ("ניסיתי להסביר אינסוף. אין לי מספיק זמן.", "absurd humor"),
+    ("הכבש מנה את עצמו. נרדם.", "absurd humor"),
+    ("שאלתי את הפלפל אם הוא חריף. בדקתי בעצמי.", "absurd humor"),
+    ("הספר שאמרתי שאקרא שאל מתי. אמרתי בקרוב.", "absurd humor"),
+    ("ניסיתי לשמוע את הים בתוך קונכייה. הים לא אישר.", "absurd humor"),
+    ("אם מזג האוויר טוב מי מחליט?", "absurd humor"),
+    ("שאלתי את הדלת מה היא מרגישה. היא נפתחה.", "absurd humor"),
+    ("אם אתה הולך מהר מהר, אתה רץ. אם חושב מהר, אתה מה?", "absurd humor"),
+    # DARK HUMOR
+    ("ניסיתי להיות אופטימי. לא עזר.", "dark humor"),
+    ("אמרו לי שהימים הולכים. הסכמתי.", "dark humor"),
+    ("שאלתי את הרופא כמה זמן יש לי. הוא שאל ממה.", "dark humor"),
+    ("פחדתי מהחושך. עכשיו אני פוחד מהאור שמגיע אחריו.", "dark humor"),
+    ("אמרתי שאתחיל מחר. מחר גם אמר כך.", "dark humor"),
+    ("קניתי חיים. לא מצאתי קבלה להחזרה.", "dark humor"),
+    ("שאלתי מה מגיע אחרי הסוף. לא מצאתי מי שיודע.", "dark humor"),
+    ("הייתי אופטימי פעם. מזג האוויר השתנה.", "dark humor"),
+    ("אמרו שחיים קצרים. ומה אם הם ארוכים?", "dark humor"),
+    ("שאלתי את הפחד שלי מה הוא רוצה. הוא ביקש יותר.", "dark humor"),
+    ("ניסיתי לפתור את הבעיות. הם הביאו חברים.", "dark humor"),
+    ("אמרו שהשמש תמיד זורחת. לא היו כאן בחורף.", "dark humor"),
+    ("הרופא אמר להפחית לחץ. הוסיף עוד תרופות.", "dark humor"),
+    ("שאלתי את עצמי מה הטעם. לא ענה.", "dark humor"),
+    ("אמרו שזמן מרפא. הזמן שלחתי חשבון.", "dark humor"),
+    ("הטיפול שיפר את חיי. לפחות הטיפול אמר.", "dark humor"),
+    ("ניסיתי לראות את הכוס חצי מלאה. הכוס לא הסכימה.", "dark humor"),
+    ("שאלתי לאן מובילה הדרך. לא הגיב מי שהיה שם.", "dark humor"),
+    ("אמרו שיש תכנית לכולם. לא שלחו לי עותק.", "dark humor"),
+    ("הפסקתי לספור את הצרות. הן לא הפסיקו.", "dark humor"),
+    ("שאלתי את הרוח מה שלה. היא עברה הלאה.", "dark humor"),
+    ("ניסיתי להיות מאושר. נמאס לי.", "dark humor"),
+    ("אמרתי שהדברים ישתפרו. אמר מה?", "dark humor"),
+    ("קיבלתי עצה לא לדאוג. דאגתי לשכוח.", "dark humor"),
+    ("שאלתי את המוח שלי לנוח. הוא המשיך.", "dark humor"),
+    ("אמרו שחיים הם מסע. לא נתנו מפה.", "dark humor"),
+    ("ניסיתי לישון על זה. הבעיה ישנה איתי.", "dark humor"),
+    ("שאלתי את הגורל שלי מה הוא מתכנן. הצחיק.", "dark humor"),
+    ("אמרו שהעתיד בידיים שלי. הידיים מרתתות.", "dark humor"),
+    ("הפסיכולוג שאל מה אני מרגיש. שילמתי בשביל זה.", "dark humor"),
+    ("ניסיתי להביט קדימה. הצוואר כאב.", "dark humor"),
+    ("שאלתי את הכוכבים לעזרה. הם רחוקים.", "dark humor"),
+    ("אמרו שמצאתי את עצמי. לא זכרתי שאיבדתי.", "dark humor"),
+    # WORK HUMOR
+    ("הפגישה הייתה יכולה להיות מייל. המייל היה יכול להיות שתיקה.", "work humor"),
+    ("שאלו אותי מה התוכנית שלי. אמרתי לשרוד עד הצהריים.", "work humor"),
+    ("הבוס ביקש עדכון. עדכנתי שאני עדיין כאן.", "work humor"),
+    ("אמרו לי לתעדף. תעדפתי לצאת בזמן.", "work humor"),
+    ("הגשתי עבודה מוקדם. ביקשו שאחזור אחרי שאגמור.", "work humor"),
+    ("שלחתי מייל חירום. קיבלתי תשובה אחרי שבועיים.", "work humor"),
+    ("הבוס אמר שאני חלק מהצוות. אז למה אני עובד לבד?", "work humor"),
+    ("ביקשו ממני להיות יצירתי. יצרתי סיבה לא להגיע.", "work humor"),
+    ("כנס השנתי בא. שוב אותה ארוחה, שוב אותם אנשים.", "work humor"),
+    ("שאלתי אם יש גמישות בשעות. אמרו כן, גמישות בין 9 ל-5.", "work humor"),
+    ("ביצועי השנה: נוכחות. מצוין.", "work humor"),
+    ("שלחתי בקשה לחופשה. המחשב ביקש אישור מנהל. המנהל בחופשה.", "work humor"),
+    ("הכנתי מצגת. מחקתי. הכנתי אחרת. מחקתי. שלחתי מייל.", "work humor"),
+    ("המשרד שלנו פתוח לרעיונות. אבל לא לשינויים.", "work humor"),
+    ("ביקשו ממני להיות ב-15 בדיוק. הגעתי ב-15:01.", "work humor"),
+    ("מחלקת HR שאלה אם אני מאושר. שאלו בדיוק כמה מאושר.", "work humor"),
+    ("הועדה החליטה לא להחליט.", "work humor"),
+    ("שאלתי את הבוס שלי מה הסדר עדיפויות. הכל דחוף.", "work humor"),
+    ("קיבלתי מייל דחוף מלפני שבוע. עדיין חושב.", "work humor"),
+    ("הגדרתי סטטוס עסוק בזום. קראו לי לפגישה.", "work humor"),
+    ("כתבתי דוח על חוסר יעילות. לא קרא אותו אף אחד.", "work humor"),
+    ("שאלתי איך עובר הonboarding. אמרו שעוד לא התחיל.", "work humor"),
+    ("אנחנו עובדים בצוות. כולם עובדים לבד על אותו פרויקט.", "work humor"),
+    ("ביקשו ממני לחדש. חידשתי את כוס הקפה.", "work humor"),
+    ("שאלתי אם אקבל העלאה. הבטיחו בונוס של תודה.", "work humor"),
+    ("הפגישה היחידה שאני אוהב - פגישת הצהריים.", "work humor"),
+    ("שאלו מה חסר לי בעבודה. אמרתי: ארבעה ימי עבודה.", "work humor"),
+    ("קיבלתי הוקרה עובד החודש. החנייה שלי גרועה בכל זאת.", "work humor"),
+    ("שאלתי את הקולגה אם הוא פנוי לפגישה. הוא נפנה ב-2027.", "work humor"),
+    ("הSlack שלנו הוא 30 ערוצים של כולם שמים לב?", "work humor"),
+    ("ביקשתי העלאה. הציעו תואר חדש. אותה משכורת.", "work humor"),
+    ("הגדרת הצלחה בחברה שלנו: לשרוד עד הרבעון הבא.", "work humor"),
+    ("הKPI שלי: להגיע לסוף החודש.", "work humor"),
+]
+
 def init_db():
     """Initialize DB — fast startup, seeds only if empty."""
     try:
@@ -419,19 +626,23 @@ def init_db():
         count = db.execute("SELECT COUNT(*) FROM jokes").fetchone()[0]
         if count == 0:
             now = datetime.now(timezone.utc).isoformat()
+            seeded = 0
             for text, category in SEED_JOKES:
                 jid = str(uuid.uuid4())
                 try:
-                    db.execute(
-                        "INSERT OR IGNORE INTO jokes "
-                        "(id,text,category,language,intensity,safe,sexual,source,score,created_at) "
-                        "VALUES (?,?,?,\'en\',2,1,0,\'seed\',10,?)",
-                        (jid, text, category, now)
-                    )
+                    db.execute("INSERT OR IGNORE INTO jokes (id,text,category,language,intensity,safe,sexual,source,score,created_at) VALUES (?,?,?,\'en\',2,1,0,\'seed\',10,?)", (jid, text, category, now))
+                    seeded += 1
+                except Exception:
+                    pass
+            for text, category in HE_SEED_JOKES:
+                jid = str(uuid.uuid4())
+                try:
+                    db.execute("INSERT OR IGNORE INTO jokes (id,text,category,language,intensity,safe,sexual,source,score,created_at) VALUES (?,?,?,\'he\',2,1,0,\'seed\',10,?)", (jid, text, category, now))
+                    seeded += 1
                 except Exception:
                     pass
             db.commit()
-            print(f"[DB] Seeded {len(SEED_JOKES)} jokes")
+            print(f"[DB] Seeded {seeded} jokes (EN+HE)")
         else:
             print(f"[DB] {count} jokes already in DB, skipping seed")
         db.close()
@@ -1831,9 +2042,13 @@ function setLang(l) {
 }
 
 // ── JOKES ─────────────────────────────────────────────────────────────────────
-let jokeQueue = [];
-let isGenerating = false;
+const jokeQueues = {};   // key: "lang|cat1,cat2" -> array of jokes
+const generating = {};   // key: same -> bool
 let statsPool = 0, statsAI = 0;
+
+function qKey(l, types) { return l + '|' + [...types].sort().join(','); }
+function getQueue(k) { if (!jokeQueues[k]) jokeQueues[k] = []; return jokeQueues[k]; }
+function isGen(k) { return !!generating[k]; }
 
 function updateCounter() {
   const el = document.getElementById('joke-counter');
@@ -1856,25 +2071,27 @@ function showJoke(data) {
   if (mt) mt.value = data.text;
 }
 
-function bgGenerate(params) {
-  if (isGenerating) return;
-  isGenerating = true;
+function bgGenerate(params, qk) {
+  if (isGen(qk)) return;
+  generating[qk] = true;
   fetch('/api/jokes/generate?' + params)
     .then(r => r.json())
-    .then(d => { if (d && d.text && d.source === 'ai') jokeQueue.push(d); })
+    .then(d => { if (d && d.text && d.source === 'ai') getQueue(qk).push(d); })
     .catch(() => {})
-    .finally(() => { isGenerating = false; });
+    .finally(() => { generating[qk] = false; });
 }
 
 async function getJoke() {
   const types = getHumorTypes();
   const params = `lang=${lang}&types=${encodeURIComponent(types.join(','))}`;
+  const qk = qKey(lang, types);
   const btn = document.getElementById('joke-btn');
+  const q = getQueue(qk);
 
-  // If queued AI joke available — show instantly
-  if (jokeQueue.length > 0) {
-    showJoke(jokeQueue.shift());
-    bgGenerate(params);
+  // If queued AI joke for this lang+category — show instantly
+  if (q.length > 0) {
+    showJoke(q.shift());
+    bgGenerate(params, qk);
     return;
   }
 
@@ -1895,18 +2112,20 @@ async function getJoke() {
 
   if (ai && ai.source === 'ai') {
     showJoke(ai);
-    bgGenerate(params);
+    bgGenerate(params, qk);
   } else {
-    showJoke(pool && pool.text ? pool : { text: "Why do programmers prefer dark mode? Light attracts bugs.", category: "tech jokes", source: "pool" });
-    bgGenerate(params);
+    showJoke(pool && pool.text ? pool : { text: lang === 'he' ? "למה המתכנת לא יוצא לחוץ? כי בחוץ יש יותר מדי באגים." : "Why do programmers prefer dark mode? Light attracts bugs.", category: "tech jokes", source: "pool" });
+    bgGenerate(params, qk);
   }
 }
 
 // Auto-load first joke on page open
 (function() {
-  const p = `lang=en&types=${encodeURIComponent('dad jokes,absurd humor')}`;
+  const types = ['dad jokes', 'absurd humor'];
+  const p = `lang=${lang}&types=${encodeURIComponent(types.join(','))}`;
+  const qk = qKey(lang, types);
   fetch(`/api/jokes/quick?${p}`).then(r=>r.json()).then(d=>{ if(d&&d.text) showJoke(d); }).catch(()=>{});
-  bgGenerate(p);
+  bgGenerate(p, qk);
 })();
 
 async function rate(r) {
