@@ -6,6 +6,8 @@
   "deploy": {
     "startCommand": "gunicorn server:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120",
     "restartPolicyType": "NEVER",
+    "healthcheckPath": "/_health",
+    "healthcheckTimeout": 300,
     "deployTimeout": 300
   }
 }
