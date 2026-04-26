@@ -1766,6 +1766,7 @@ def index():
 
 <script>
 let TOKEN = localStorage.getItem('jk_token') || '';
+const AI_KEY_SET = document.getElementById('ai-badge')?.textContent?.includes('Connected') || false;
 let currentJoke = null;
 let currentRoast = '';
 let battleId = null;
