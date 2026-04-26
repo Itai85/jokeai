@@ -984,6 +984,38 @@ def serve_avatar(filename):
     return send_file(str(path))
 
 # ── JOKES ─────────────────────────────────────────────────────────────────────
+@app.route("/api/jokes/quick")
+@optional_auth  
+def quick_joke():
+    """Always returns from pool instantly — no AI wait."""
+    seen_param = request.args.get("seen", "")
+    seen_ids = [s for s in seen_param.split(",") if s.strip()]
+    lang = request.args.get("lang", "en")
+    types_param = request.args.get("types", "")
+    humor_types = [t.strip() for t in types_param.split(",") if t.strip()] or ["dad jokes"]
+    
+    exclude = ""
+    params = [lang, 1]
+    if seen_ids:
+        placeholders = ",".join("?" * len(seen_ids))
+        exclude = f"AND id NOT IN ({placeholders})"
+        params += seen_ids
+    
+    cat_filter = " OR ".join(["category=?" for _ in humor_types])
+    row = db_one(
+        f"SELECT * FROM jokes WHERE language=? AND safe>=? {exclude} AND ({cat_filter}) ORDER BY RANDOM() LIMIT 1",
+        params + humor_types
+    )
+    if not row:
+        row = db_one(f"SELECT * FROM jokes WHERE safe>=1 {exclude} ORDER BY RANDOM() LIMIT 1", [1] + (seen_ids if seen_ids else []))
+    if not row:
+        return jsonify({"id": "0", "text": "Why do programmers prefer dark mode? Because light attracts bugs.", "category": "tech jokes", "source": "fallback"})
+    
+    if g.user_id:
+        db_exec("INSERT INTO joke_history (id,user_id,joke_id,viewed_at) VALUES (?,?,?,?)",
+                (str(uuid.uuid4()), g.user_id, row["id"], datetime.now(timezone.utc).isoformat()))
+    return jsonify({"id": row["id"], "text": row["text"], "category": row["category"], "source": "pool"})
+
 @app.route("/api/jokes/generate")
 @optional_auth
 def generate_joke():
