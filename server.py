@@ -310,25 +310,31 @@ SEED_JOKES = [
 ]
 
 def init_db():
-    """Initialize DB — called at module level so gunicorn picks it up."""
+    """Initialize DB — fast startup, seeds only if empty."""
     try:
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         db = sqlite3.connect(str(DB_PATH))
         db.executescript(SCHEMA)
         db.executescript(SEED_TEMPLATES)
-        now = datetime.now(timezone.utc).isoformat()
-        for text, category in SEED_JOKES:
-            jid = str(uuid.uuid4())
-            try:
-                db.execute(
-                    "INSERT OR IGNORE INTO jokes "
-                    "(id,text,category,language,intensity,safe,sexual,source,score,created_at) "
-                    "VALUES (?,?,?,\'en\',2,1,0,\'seed\',10,?)",
-                    (jid, text, category, now)
-                )
-            except Exception:
-                pass
-        db.commit()
+        # Only seed if jokes table is empty (skip on restart)
+        count = db.execute("SELECT COUNT(*) FROM jokes").fetchone()[0]
+        if count == 0:
+            now = datetime.now(timezone.utc).isoformat()
+            for text, category in SEED_JOKES:
+                jid = str(uuid.uuid4())
+                try:
+                    db.execute(
+                        "INSERT OR IGNORE INTO jokes "
+                        "(id,text,category,language,intensity,safe,sexual,source,score,created_at) "
+                        "VALUES (?,?,?,\'en\',2,1,0,\'seed\',10,?)",
+                        (jid, text, category, now)
+                    )
+                except Exception:
+                    pass
+            db.commit()
+            print(f"[DB] Seeded {len(SEED_JOKES)} jokes")
+        else:
+            print(f"[DB] {count} jokes already in DB, skipping seed")
         db.close()
         print(f"[DB] Ready at {DB_PATH}")
     except Exception as e:
