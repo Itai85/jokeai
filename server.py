@@ -381,8 +381,8 @@ def get_prefs(user_id: str) -> dict:
     return row
 
 # ── AI Joke Generation ─────────────────────────────────────────────────────────
-AI_KEY = os.getenv("GROQ_API_KEY", os.getenv("GROQ_API_KEY", ""))
-AI_PROVIDER = "groq" if os.getenv("GROQ_API_KEY") else ("gemini" if os.getenv("GROQ_API_KEY") else "")
+AI_KEY = os.getenv("GROQ_API_KEY", os.getenv("GEMINI_API_KEY", ""))
+AI_PROVIDER = "groq" if os.getenv("GROQ_API_KEY") else ("gemini" if os.getenv("GEMINI_API_KEY") else "")
 
 def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
     """Call AI - supports Groq (free) and Gemini (free)."""
