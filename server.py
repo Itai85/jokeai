@@ -1752,7 +1752,7 @@ async function api(method, path, body=null) {
   const h = {'Content-Type':'application/json'};
   if (TOKEN) h['Authorization'] = 'Bearer ' + TOKEN;
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 30000);
+  const timer = setTimeout(() => ctrl.abort(), 25000);
   try {
     const r = await fetch(path, {method, headers:h, body: body ? JSON.stringify(body) : null, signal: ctrl.signal});
     clearTimeout(timer);
