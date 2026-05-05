@@ -1362,26 +1362,63 @@ def roast_friend():
     name = (d.get("name") or "").strip()
     job  = (d.get("job") or "").strip()
     fact = (d.get("fact") or "").strip()
+    lang = (d.get("lang") or "en").strip()
 
     if not name or not job or not fact:
         return jsonify({"error": "name, job, and fact are required"}), 400
 
-    prompt = f"""You are a comedy roast writer. Write ONE playful roast joke.
+    lang_note = "IMPORTANT: Write the roast entirely in Hebrew (עברית). Every word must be Hebrew." if lang == "he" else "Write in English."
+
+    prompt = f"""You are a sharp comedy roast writer. Write ONE punchy roast joke about this person.
 
 Person: {name}
 Job: {job}
 Fun fact: {fact}
 
+{lang_note}
 Rules:
-- Playful and witty, NOT cruel
-- 2-3 sentences max
-- Focus on the job or fact, never appearance
-- Something they'd laugh at too
-- Return ONLY the roast text"""
+- Make it specific to their job AND fact
+- Playful, witty, NOT cruel
+- 1-2 sentences, punchy
+- Return ONLY the roast text, nothing else"""
 
-    text = call_ai(prompt)
+    # Direct AI calls — never fall back to pool for roasts
+    text = None
+    if ANTHROPIC_KEY:
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+            msg = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=150,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            text = msg.content[0].text.strip()
+            print(f"[ROAST] Claude OK")
+        except Exception as e:
+            print(f"[ROAST] Claude failed: {e}")
+    if not text and GROQ_KEY:
+        try:
+            from groq import Groq
+            client = Groq(api_key=GROQ_KEY)
+            comp = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=150, temperature=0.9
+            )
+            text = comp.choices[0].message.content.strip()
+            print(f"[ROAST] Groq OK")
+        except Exception as e:
+            print(f"[ROAST] Groq failed: {e}")
+    if not text:
+        if lang == "he":
+            text = f"{name} הוא {job} כי זו הקריירה היחידה שבה להיות מבולבל נחשב לכישרון."
+        else:
+            text = f"{name} became a {job} because it was the only career where being this confused is considered expertise."
+
     share_text = f"😂 HaHaTown just roasted {name}:\n\n\"{text}\"\n\nRoast your friends: {request.host_url}"
     return jsonify({"text": text, "shareText": share_text})
+
 
 @app.route("/api/roast/photo", methods=["POST"])
 @optional_auth
