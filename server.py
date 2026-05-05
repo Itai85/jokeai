@@ -866,27 +866,24 @@ def build_joke_prompt(prefs: dict) -> str:
         humor_types = json.loads(humor_types)
     lang = prefs.get("language", "en")
     if lang == "he":
-        lang_instruction = "IMPORTANT: Write the joke entirely in Hebrew (עברית). Every word must be in Hebrew."
+        lang_instruction = "CRITICAL: You MUST write the joke entirely in Hebrew (עברית). Every single word must be Hebrew. Do NOT use English at all."
     else:
         lang_instruction = "Write the joke in English."
     safe = prefs.get("safe_mode", 1)
     sexual = prefs.get("sexual_content", 0)
+    he_reminder = "\n\nREMINDER: Write ONLY in Hebrew (עברית). No English words at all." if lang == "he" else ""
     return f"""You are a professional comedy writer. Generate ONE short, original joke.
 Return ONLY the joke text — no title, no explanation, no preamble.
 
-Preferences:
-- Humor styles: {', '.join(humor_types)}
-- Intensity: {intensity_label} ({prefs.get('intensity',3)}/5)
-- {lang_instruction}
-- Safe mode: {"YES — avoid offensive or extreme content" if safe else "NO"}
-- Sexual humor: {"allowed (adult user)" if sexual else "NOT allowed"}
+{lang_instruction}
+Humor styles: {', '.join(humor_types)}
+Safe mode: {"YES" if safe else "NO"}{he_reminder}
 
 Rules:
 - 1–3 sentences max
-- Be original and genuinely funny
-- Avoid clichéd openings like "Why did the chicken..."
+- Be original and genuinely funny  
 - Be creative and unexpected
-- Intensity {prefs.get('intensity',3)}/5 means {"keep it very clean and family-friendly" if prefs.get('intensity',3) <= 2 else "push boundaries, be edgy and surprising" if prefs.get('intensity',3) >= 4 else "balanced humor"}"""
+- {"Keep it clean and family-friendly" if prefs.get('intensity',3) <= 2 else "Be edgy, sharp and surprising" if prefs.get('intensity',3) >= 4 else "Balanced humor"}"""
 
 def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
     """AI-first: generate fresh jokes with Gemini, pool as fallback."""
