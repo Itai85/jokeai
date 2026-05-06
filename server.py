@@ -886,34 +886,46 @@ def _fallback_joke(ctx: str = "") -> str:
     return "Why do programmers prefer dark mode? Because light attracts bugs."
 
 def build_joke_prompt(prefs: dict) -> tuple:
-    """Returns (prompt, system) tuple."""
-    labels = ["very mild","mild","moderate","edgy","extreme"]
-    intensity_label = labels[min(prefs.get("intensity", 3) - 1, 4)]
+    """Returns (prompt, system) tuple for AI joke generation."""
+    labels = ["very mild", "mild", "moderate", "edgy", "extreme"]
+    intensity = prefs.get("intensity", 3)
+    intensity_label = labels[min(intensity - 1, 4)]
     humor_types = prefs.get("humor_types", ["dad jokes"])
     if isinstance(humor_types, str):
         humor_types = json.loads(humor_types)
     lang = prefs.get("language", "en")
-    if lang == "he":
-        system = "אתה כותב בדיחות בעברית בלבד. כל תשובה שלך חייבת להיות בעברית. אין להשתמש באנגלית בכלל."
-        lang_instruction = "כתוב את הבדיחה בעברית בלבד. אל תכתוב אפילו מילה אחת באנגלית."
-    else:
-        system = "You are a professional comedy writer. Write jokes in English only."
-        lang_instruction = "Write the joke in English."
     safe = prefs.get("safe_mode", 1)
-    sexual = prefs.get("sexual_content", 0)
-    he_reminder = "\n\nREMINDER: Write ONLY in Hebrew (עברית). No English words at all." if lang == "he" else ""
-    return f"""You are a professional comedy writer. Generate ONE short, original joke.
+
+    if lang == "he":
+        system = "אתה כותב בדיחות בעברית בלבד. כל תשובה שלך חייבת להיות בעברית מלאה. אסור להשתמש באנגלית."
+        prompt = f"""כתוב בדיחה קצרה ומקורית אחת בעברית.
+החזר רק את טקסט הבדיחה - ללא כותרת, ללא הסבר.
+
+סגנון הומור: {', '.join(humor_types)}
+עצמה: {intensity_label}
+{'ללא תוכן פוגעני' if safe else 'אפשר להיות קצת קשוח'}
+
+כללים:
+- 1-2 משפטים בלבד
+- מקורי ומצחיק
+- בעברית בלבד - אפילו לא מילה אחת באנגלית"""
+    else:
+        system = "You are a professional comedy writer. Write jokes in English only. Never write in Hebrew or any other language."
+        prompt = f"""Write ONE short, original joke in English.
 Return ONLY the joke text — no title, no explanation, no preamble.
 
-{lang_instruction}
 Humor styles: {', '.join(humor_types)}
-Safe mode: {"YES" if safe else "NO"}{he_reminder}
+Intensity: {intensity_label} — {"keep it very clean and family-friendly" if intensity <= 2 else "be edgy, sharp and surprising" if intensity >= 4 else "balanced humor"}
+{"Safe mode: YES — avoid offensive content" if safe else ""}
 
 Rules:
-- 1–3 sentences max
-- Be original and genuinely funny  
-- Be creative and unexpected
-- {"Keep it clean and family-friendly" if prefs.get('intensity',3) <= 2 else "Be edgy, sharp and surprising" if prefs.get('intensity',3) >= 4 else "Balanced humor"}"""
+- 1-3 sentences max
+- Original and genuinely funny
+- Avoid clichéd openings like "Why did the chicken..."
+- Creative and unexpected"""
+
+    return prompt, system
+
 
 def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
     """AI-first: generate fresh jokes with Gemini, pool as fallback."""
@@ -1426,7 +1438,9 @@ Rules:
             text = msg.content[0].text.strip()
             print(f"[ROAST] Claude OK")
         except Exception as e:
+            import traceback
             print(f"[ROAST] Claude failed: {e}")
+            print(traceback.format_exc()[:500])
     if not text and GROQ_KEY:
         try:
             from groq import Groq
