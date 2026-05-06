@@ -715,16 +715,11 @@ def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
             return None
         import anthropic
         client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-        msgs = []
+        kwargs = dict(model="claude-haiku-4-5-20251001", max_tokens=max_tokens,
+                      messages=[{"role": "user", "content": prompt}])
         if system:
-            msgs.append({"role": "user", "content": system + "\n\n" + prompt})
-        else:
-            msgs.append({"role": "user", "content": prompt})
-        msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=max_tokens,
-            messages=msgs
-        )
+            kwargs["system"] = system
+        msg = client.messages.create(**kwargs)
         return msg.content[0].text.strip()
 
     def _try_groq():
@@ -890,7 +885,8 @@ def _fallback_joke(ctx: str = "") -> str:
         return rows[0]["text"]
     return "Why do programmers prefer dark mode? Because light attracts bugs."
 
-def build_joke_prompt(prefs: dict) -> str:
+def build_joke_prompt(prefs: dict) -> tuple:
+    """Returns (prompt, system) tuple."""
     labels = ["very mild","mild","moderate","edgy","extreme"]
     intensity_label = labels[min(prefs.get("intensity", 3) - 1, 4)]
     humor_types = prefs.get("humor_types", ["dad jokes"])
@@ -898,8 +894,10 @@ def build_joke_prompt(prefs: dict) -> str:
         humor_types = json.loads(humor_types)
     lang = prefs.get("language", "en")
     if lang == "he":
-        lang_instruction = "CRITICAL: You MUST write the joke entirely in Hebrew (עברית). Every single word must be Hebrew. Do NOT use English at all."
+        system = "אתה כותב בדיחות בעברית בלבד. כל תשובה שלך חייבת להיות בעברית. אין להשתמש באנגלית בכלל."
+        lang_instruction = "כתוב את הבדיחה בעברית בלבד. אל תכתוב אפילו מילה אחת באנגלית."
     else:
+        system = "You are a professional comedy writer. Write jokes in English only."
         lang_instruction = "Write the joke in English."
     safe = prefs.get("safe_mode", 1)
     sexual = prefs.get("sexual_content", 0)
@@ -929,7 +927,8 @@ def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
 
     # ── 1. If AI is available → generate fresh joke ────────────────────────
     if AI_KEY:
-        text = call_ai(build_joke_prompt(prefs))
+        _prompt, _system = build_joke_prompt(prefs)
+        text = call_ai(_prompt, system=_system)
         # Accept any AI-generated text that isn't blank
         if text and len(text) > 10:
             jid = str(uuid.uuid4())
