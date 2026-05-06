@@ -707,8 +707,25 @@ AI_KEY        = ANTHROPIC_KEY or GROQ_KEY or GEMINI_KEY
 AI_PROVIDER   = "claude" if ANTHROPIC_KEY else ("groq" if GROQ_KEY else ("gemini" if GEMINI_KEY else ""))
 
 def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
-    """Try Groq first (if key set), then Gemini — 8s timeout each."""
+    """Try Claude first, then Groq, then Gemini — 8s timeout each."""
     import urllib.request
+
+    def _try_claude():
+        if not ANTHROPIC_KEY:
+            return None
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        msgs = []
+        if system:
+            msgs.append({"role": "user", "content": system + "\n\n" + prompt})
+        else:
+            msgs.append({"role": "user", "content": prompt})
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=max_tokens,
+            messages=msgs
+        )
+        return msg.content[0].text.strip()
 
     def _try_groq():
         if not GROQ_KEY:
@@ -782,9 +799,24 @@ def call_ai(prompt: str, system: str = "", max_tokens: int = 300) -> str:
 
 
 def call_ai_vision(prompt: str, image_b64: str, mime: str) -> str:
-    """Vision: try Groq Llama Vision, fallback to Gemini."""
+    """Vision: try Claude first, then Groq, then Gemini."""
     import urllib.request
     FALLBACK = "He looks like someone who just realized he sent that message to the wrong chat."
+
+    def _try_claude_vision():
+        if not ANTHROPIC_KEY:
+            return None
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=200,
+            messages=[{"role": "user", "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": mime, "data": image_b64}},
+                {"type": "text", "text": prompt}
+            ]}]
+        )
+        return msg.content[0].text.strip()
 
     def _try_groq_vision():
         if not GROQ_KEY:
@@ -898,9 +930,8 @@ def get_joke_for_user(prefs: dict, seen_ids: list) -> dict:
     # ── 1. If AI is available → generate fresh joke ────────────────────────
     if AI_KEY:
         text = call_ai(build_joke_prompt(prefs))
-        # Check it's not a fallback (fallback returns pool jokes)
-        pool_texts = [j[0] for j in SEED_JOKES]
-        if text and text not in pool_texts:
+        # Accept any AI-generated text that isn't blank
+        if text and len(text) > 10:
             jid = str(uuid.uuid4())
             now = datetime.now(timezone.utc).isoformat()
             db_exec(
